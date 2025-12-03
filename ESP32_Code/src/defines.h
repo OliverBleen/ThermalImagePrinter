@@ -1,0 +1,12 @@
+
+
+
+#define LOCAL_IP 4,3,2,1
+#define LOCAL_IP_STRING "http://4.3.2.1/"
+#define GATEWAY_IP 4,3,2,1
+#define SUBNET_MASK 255,255,255,0
+#define WIFI_SSID "TIP"
+#define WIFI_PASSWORD "45321859"
+#define WIFI_CHANNEL 6
+#define WIFI_MAX_CONNECTIONS 4
+#define DNS_TTL 3600
