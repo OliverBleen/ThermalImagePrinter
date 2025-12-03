@@ -37,10 +37,10 @@ class thermal_printer
     static void spitOut();
 
     static void printBitmap(uint8_t* imageData, uint16_t width, uint16_t height);
-    static void printQRCode(char* data);
-    static void printBarcode_CODE128(char* data);
-    static void printBarcode_UPCA(char* data);
-    static void printBarcode_EAN13(char* data);
+    static void printQRCode(const char* data);
+    static void printBarcode_CODE128(const char* data);
+    static void printBarcode_UPCA(const char* data);
+    static void printBarcode_EAN13(const char* data);
 
     static void print(const char* data);
     static void println();

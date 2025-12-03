@@ -46,7 +46,7 @@ void thermal_printer::setDarknessAndDelay(uint8_t densityPercent, uint16_t break
 
 // Print QR Code with specified data
 // Uses the printer's built-in QR code generation capability
-void thermal_printer::printQRCode(char* data) {
+void thermal_printer::printQRCode(const char* data) {
   thermal_printer::upsideDownPrinting(thermal_printer::globalUpsideDown ? 1 : 0);
 
   // [1] Set QR code model (Model 2 is standard)
@@ -110,7 +110,7 @@ void thermal_printer::printQRCode(char* data) {
 }
 
 // Print CODE128 barcode - variable length alphanumeric
-void thermal_printer::printBarcode_CODE128(char* data) {
+void thermal_printer::printBarcode_CODE128(const char* data) {
   thermal_printer::upsideDownPrinting(globalUpsideDown ? 1 : 0);
   
   // Set barcode height (in dots)
@@ -143,7 +143,7 @@ void thermal_printer::printBarcode_CODE128(char* data) {
 }
 
 // Print UPC-A barcode - requires exactly 11 digits
-void thermal_printer::printBarcode_UPCA(char* data) {
+void thermal_printer::printBarcode_UPCA(const char* data) {
   thermal_printer::upsideDownPrinting(globalUpsideDown ? 1 : 0);
   
   // Validate data length for UPC-A
@@ -180,7 +180,7 @@ void thermal_printer::printBarcode_UPCA(char* data) {
 }
 
 // Print EAN13 barcode - requires exactly 12 digits
-void thermal_printer::printBarcode_EAN13(char* data) {
+void thermal_printer::printBarcode_EAN13(const char* data) {
   thermal_printer::upsideDownPrinting(globalUpsideDown ? 1 : 0);
   
   // Validate data length for EAN13
@@ -293,7 +293,6 @@ void thermal_printer::printBitmap(uint8_t* imageData, uint16_t width, uint16_t h
   }
 
   Serial.println("Bitmap printed: " + String(width) + "x" + String(height));
-  feedLines(2);
 }
 
 // Create test pattern in bitmap buffer - useful for printer testing
@@ -402,7 +401,6 @@ void thermal_printer::printBitmapDC2_Method(const unsigned char* progmemData, ui
   }
 
   Serial.println("DC2 * method completed!");
-  feedLines(2);
   
   // Reset printer darkness to normal
   printerSerial.write(0x12);  // DC2
