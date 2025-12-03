@@ -2,9 +2,11 @@
 #include "../defines.h"
 #include <esp_wifi.h>			//Used for mpdu_rx_disable android workaround
 #include <stdlib.h>
+#include <thermal_printer/thermal_printer.h>
 
 DNSServer webserver::dnsServer;
 AsyncWebServer webserver::server(80);
+uint8_t webserver::bitmapData[(384*10 +7)/8];
 
 void webserver::begin()
 {
@@ -60,6 +62,9 @@ void webserver::serve()
 
 	// the catch all
 	server.onNotFound([](AsyncWebServerRequest *request) {
+		if (request->url() == "/api/tip/uploadBitmapData")
+      		return; // response object already created by onRequestBody
+
 		request->redirect(LOCAL_IP_STRING);
 		Serial.print("onnotfound ");
 		Serial.print(request->host());	// This gives some insight into whatever was being requested on the serial monitor
@@ -76,6 +81,11 @@ void webserver::serve()
     });
 
 	configAPI();
+
+	server.onRequestBody([](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total){
+		if (request->url() == "/api/tip/uploadBitmapData" && request->method() == HTTP_POST)
+			handleBitmapData(request, data, len);
+	});
 
     server.begin();
 }
@@ -94,6 +104,7 @@ void webserver::configAPI()
 		}
 		String data = request->getParam("data")->value();
 
+		thermal_printer::print(data.c_str());
 		Serial.println(data);
 		request->send(200);
 	});
@@ -106,7 +117,75 @@ void webserver::configAPI()
 			data = request->getParam("data")->value();
 		}
 		
+		thermal_printer::println(data.c_str());
 		Serial.println(data);
+		request->send(200);
+	});
+
+	server.on("/api/tip/printBitmap", HTTP_POST, [] (AsyncWebServerRequest *request)
+	{
+		Serial.println("/api/tip/printBitmap");
+		if(!(request->hasParam("width")))
+		{
+			Serial.println("Missing param 'width' -> 400");
+			request->send(400, "text", "Missing param 'width'");
+			return;
+		}
+		if(!(request->hasParam("height")))
+		{
+			Serial.println("Missing param 'height' -> 400");
+			request->send(400, "text", "Missing param 'height'");
+			return;
+		}
+		String data = request->getParam("width")->value();
+		
+		if(data.length() > 3)
+		{
+			Serial.println("Invalid value for 'width' > 999 -> 400");
+			request->send(400, "text", "Invalid value for 'width' > 999");
+			return;
+		}
+
+		if(!areAllCharsDigits(data.c_str()))
+		{
+			Serial.println("Invalid value for 'width' not digit -> 400");
+			request->send(400, "text", "Invalid value for 'width' not digit");
+			return;
+		}
+		uint16_t width = strtoul(data.c_str(), NULL, 10);
+
+		data = request->getParam("height")->value();
+		
+		if(data.length() > 3)
+		{
+			Serial.println("Invalid value for 'height' > 999 -> 400");
+			request->send(400, "text", "Invalid value for 'height' > 999");
+			return;
+		}
+
+		if(!areAllCharsDigits(data.c_str()))
+		{
+			Serial.println("Invalid value for 'height' not digit -> 400");
+			request->send(400, "text", "Invalid value for 'height' not digit");
+			return;
+		}
+		uint16_t height = strtoul(data.c_str(), NULL, 10);
+
+		if(width > 384)
+		{
+			Serial.println("Invalid value for 'width' > 384");
+			request->send(400, "text", "Invalid value for 'width' > 384");
+			return;
+		}
+		if(height > 10)
+		{
+			Serial.println("Invalid value for 'height' > 10");
+			request->send(400, "text", "Invalid value for 'height' > 10");
+			return;
+		}
+
+		thermal_printer::printBitmap(bitmapData, width, height);
+
 		request->send(200);
 	});
 
@@ -121,6 +200,7 @@ void webserver::configAPI()
 		}
 		String data = request->getParam("data")->value();
 
+		thermal_printer::printQRCode(data.c_str());
 		Serial.println(data);
 		request->send(200);
 	});
@@ -136,6 +216,7 @@ void webserver::configAPI()
 		}
 		String data = request->getParam("data")->value();
 		
+		thermal_printer::printBarcode_CODE128(data.c_str());
 		Serial.println(data);
 		request->send(200);
 	});
@@ -151,6 +232,7 @@ void webserver::configAPI()
 		}
 		String data = request->getParam("data")->value();
 		
+		thermal_printer::printBarcode_UPCA(data.c_str());
 		Serial.println(data);
 		request->send(200);
 	});
@@ -166,6 +248,7 @@ void webserver::configAPI()
 		}
 		String data = request->getParam("data")->value();
 		
+		thermal_printer::printBarcode_EAN13(data.c_str());
 		Serial.println(data);
 		request->send(200);
 	});
@@ -184,22 +267,21 @@ void webserver::configAPI()
 		if(data.length() > 2)
 		{
 			Serial.println("Invalid value > 99 -> 400");
-			request->send(400, "text", "Invalid value > 100");
+			request->send(400, "text", "Invalid value > 99");
 			return;
 		}
 
-		for (uint8_t i = 0; i < data.length(); i++)
+		if(!areAllCharsDigits(data.c_str()))
 		{
-			if(!isDigit(data[i]))
-			{
-				Serial.println("Invalid value not digit -> 400");
-				request->send(400, "text", "Invalid value not digit");
-				return;
-			}
+			Serial.println("Invalid value not digit -> 400");
+			request->send(400, "text", "Invalid value not digit");
+			return;
 		}
+		
 		
 		uint8_t lines = strtoul(data.c_str(), NULL, 10);
 
+		thermal_printer::feedLines(lines);
 		Serial.println(lines);
 		request->send(200);
 	});
@@ -208,6 +290,32 @@ void webserver::configAPI()
 	{
 		Serial.println("/api/tip/spitOut");
 		
+		thermal_printer::spitOut();
 		request->send(200);
 	});
+}
+
+void webserver::handleBitmapData(AsyncWebServerRequest *request, uint8_t *data, size_t len)
+{
+	Serial.println("Handle bitmap data");
+	for (size_t i = 0; i < len; i++)
+	{
+		bitmapData[i] = data[i];
+	}
+	Serial.print(len);
+	Serial.println(" bytes");
+	
+	request->send(200);
+}
+
+bool webserver::areAllCharsDigits(const char* str)
+{
+	for (uint8_t i = 0; i < strlen(str); i++)
+	{
+		if(!isDigit(str[i]))
+		{
+			return false;
+		}
+	}
+	return true;
 }
