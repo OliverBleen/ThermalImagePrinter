@@ -14,6 +14,7 @@ class webserver
     static bool areAllCharsDigits(const char* str);
 
     static void configAPI();
+    static void configWebpages();
 
     public:
     static void begin();

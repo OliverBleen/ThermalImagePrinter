@@ -1,0 +1,110 @@
+R"=====(<!DOCTYPE html>
+<html>
+    <title>T.I.P API Doc</title>
+    <body>
+        <h1>API Doc</h1>
+        <div id="print">
+            <h2>POST /api/tip/print</h2>
+            <h3>Print text to the thermal printer (without adding a newline at the end)</h3>
+            <h4>REQUIRED Parameters:</h4>
+            <p>- data: The text to print</p>
+            <h4>Example:</h4>
+            <p>/api/tip/print?data=This+will+be+printed</p>
+            <h4>Try it out:</h4>
+            <nobr>data: <input type="text" id="printParam"></nobr>
+            <input type="button" value="Send" onclick="sendPost('print?data=' + encodeURIComponent(document.getElementById('printParam').value))"/>
+        </div>
+        <div id="println">
+            <h2>POST /api/tip/println</h2>
+            <h3>Print text to the thermal printer (with adding a newline at the end)</h3>
+            <h4>OPTIONAL Parameters:</h4>
+            <p>- data: The text to print<br/>If this parameter is not supplied, just advances the paper 1 line</p>
+            <h4>Example:</h4>
+            <p>/api/tip/println?data=This+will+be+printed</p>
+            <h4>Try it out:</h4>
+            <nobr>data: <input type="text" id="printlnParam"></nobr>
+            <input type="button" value="Send" onclick="sendPost('println?data=' + encodeURIComponent(document.getElementById('printlnParam').value))"/>
+        </div>
+        <div id="printQRCode">
+            <h2>POST /api/tip/printQRCode</h2>
+            <h3>Print a QR Code to the thermal printer</h3>
+            <h4>REQUIRED Parameters:</h4>
+            <p>- data: The text in the QR Code</p>
+            <h4>Example:</h4>
+            <p>/api/tip/printQRCode?data=https%3A%2F%2Foliverbleen.net</p>
+            <h4>Try it out:</h4>
+            <nobr>data: <input type="text" id="printQRCodeParam"></nobr>
+            <input type="button" value="Send" onclick="sendPost('printQRCode?data=' + encodeURIComponent(document.getElementById('printQRCodeParam').value))"/>
+        </div>
+        <div id="printBarcode_CODE128">
+            <h2>POST /api/tip/printBarcode_CODE128</h2>
+            <h3>Print a CODE128 barcode to the thermal printer</h3>
+            <h4>REQUIRED Parameters:</h4>
+            <p>- data: The data in the CODE128 barcode</p>
+            <h4>Example:</h4>
+            <p>/api/tip/prinprintBarcode_CODE128tln?data=0123456789</p>
+            <h4>Try it out:</h4>
+            <nobr>data: <input type="text" id="printBarcode_CODE128Param"></nobr>
+            <input type="button" value="Send" onclick="sendPost('printBarcode_CODE128?data=' + encodeURIComponent(document.getElementById('printBarcode_CODE128Param').value))"/>
+        </div>
+        <div id="printBarcode_UPCA">
+            <h2>POST /api/tip/printBarcode_UPCA</h2>
+            <h3>Print a UPCA barcode to the thermal printer</h3>
+            <h4>REQUIRED Parameters:</h4>
+            <p>- data: The data in the UPCA barcode<br/>(needs to be exactly 11 digits for an UPCA code)</p>
+            <h4>Example:</h4>
+            <p>/api/tip/printBarcode_UPCA?data=0123456789</p>
+            <h4>Try it out:</h4>
+            <nobr>data: <input type="text" id="printBarcode_UPCAParam"></nobr>
+            <input type="button" value="Send" onclick="sendPost('printBarcode_UPCA?data=' + encodeURIComponent(document.getElementById('printBarcode_UPCAParam').value))"/>
+        </div>
+        <div id="printBarcode_EAN13">
+            <h2>POST /api/tip/printBarcode_EAN13</h2>
+            <h3>Print a EAN13 barcode to the thermal printer</h3>
+            <h4>REQUIRED Parameters:</h4>
+            <p>- data: The data in the EAN13 barcode<br/>(needs to be exactly 12 digits for an EAN13 code)</p>
+            <h4>Example:</h4>
+            <p>/api/tip/printBarcode_EAN13?data=0123456789</p>
+            <h4>Try it out:</h4>
+            <nobr>data: <input type="text" id="printBarcode_EAN13Param"></nobr>
+            <input type="button" value="Send" onclick="sendPost('printBarcode_EAN13?data=' + encodeURIComponent(document.getElementById('printBarcode_EAN13Param').value))"/>
+        </div>
+        <div id="feedLines">
+            <h2>POST /api/tip/feedLines</h2>
+            <h3>Advance the paper in the printer</h3>
+            <h4>REQUIRED Parameters:</h4>
+            <p>- data: How many lines to feed<br/>Maximum 99, has to be a number</p>
+            <h4>Example:</h4>
+            <p>/api/tip/feedLines?data=4</p>
+            <h4>Try it out:</h4>
+            <nobr>data: <input type="text" id="feedLinesParam"></nobr>
+            <input type="button" value="Send" onclick="sendPost('feedLines?data=' + encodeURIComponent(document.getElementById('feedLinesParam').value))"/>
+        </div>
+        <div id="spitOut">
+            <h2>POST /api/tip/spitOut</h2>
+            <h3>Advance the paper in the printer an equivalent of 3 lines<br/>This is enough to so that was printed is fully outside of the printer</h3>
+            <h4>Has no Parameters</h4>
+            <h4>Example:</h4>
+            <p>/api/tip/spitOut</p>
+            <h4>Try it out:</h4>
+            <input type="button" value="Send" onclick="sendPost('spitOut')"/>
+        </div>
+
+        <script>
+            function baseAddress()
+            {
+                return "http://4.3.2.1/api/tip/";
+            }
+            function sendPost(param)
+            {
+                var xmlHttp = new XMLHttpRequest();
+                xmlHttp.onreadystatechange = function() { 
+                    if (xmlHttp.readyState == 4 && xmlHttp.status != 200)
+                        alert('Error ' + xmlHttp.status + ': ' + xmlHttp.responseText);
+                }
+                xmlHttp.open("POST", baseAddress() + param, true); // true for asynchronous 
+                xmlHttp.send(null);
+            }
+        </script>
+    </body>
+</html>)====="

@@ -3,6 +3,7 @@
 #include <esp_wifi.h>			//Used for mpdu_rx_disable android workaround
 #include <stdlib.h>
 #include <thermal_printer/thermal_printer.h>
+#include "webpages.h"
 
 DNSServer webserver::dnsServer;
 AsyncWebServer webserver::server(80);
@@ -80,12 +81,14 @@ void webserver::serve()
         request->send(200, "text/html", "<!DOCTYPE HTML>\n<html>\n<title>T.I.P</title><p>You are connected to the T.I.P</p>\n</html>");
     });
 
-	configAPI();
-
 	server.onRequestBody([](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total){
 		if (request->url() == "/api/tip/uploadBitmapData" && request->method() == HTTP_POST)
 			handleBitmapData(request, data, len);
 	});
+
+
+	configAPI();
+	configWebpages();
 
     server.begin();
 }
@@ -318,4 +321,14 @@ bool webserver::areAllCharsDigits(const char* str)
 		}
 	}
 	return true;
+}
+
+void webserver::configWebpages()
+{
+	server.on("/api/tip/doc.html", HTTP_GET,  [] (AsyncWebServerRequest *request)
+	{
+		Serial.println("/api/tip/doc.html");
+		
+		request->send(200, "text/html", webpages::API_TIP_DOC_HTML);
+	});
 }
