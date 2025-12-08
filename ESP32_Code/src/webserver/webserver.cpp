@@ -95,6 +95,11 @@ void webserver::serve()
 
 void webserver::configAPI()
 {
+	server.on("/api/tip/version", HTTP_GET, [] (AsyncWebServerRequest *request)
+	{
+		Serial.println("/api/tip/version");
+		request->send(200, "text", VERSION);
+	});
 	server.on("/api/tip/print", HTTP_POST, [] (AsyncWebServerRequest *request)
 	{
 		Serial.println("/api/tip/print");

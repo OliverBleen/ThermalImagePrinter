@@ -1,4 +1,4 @@
-
+#define VERSION "1.0.0"
 
 
 #define LOCAL_IP 4,3,2,1

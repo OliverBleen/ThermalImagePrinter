@@ -5,6 +5,7 @@ R"=====(<!DOCTYPE html>
         <div id="top"></div>
         <h1>API Doc</h1>
         <h2>Overview:</h2>
+        <a href="#version">/api/tip/version</a><br/>
         <a href="#print">/api/tip/print</a><br/>
         <a href="#println">/api/tip/println</a><br/>
         <a href="#printQRCode">/api/tip/printQRCode</a><br/>
@@ -14,6 +15,14 @@ R"=====(<!DOCTYPE html>
         <a href="#feedLines">/api/tip/feedLines</a><br/>
         <a href="#spitOut">/api/tip/spitOut</a><br/>
 
+        <div id="version">
+            <h2>GET /api/tip/version <a href="#top">Go to top</a></h2>
+            <h3>Get the current version of the software</h3>
+            <h4>Example:</h4>
+            <p>/api/tip/version</p>
+            <h4>Try it out:</h4>
+            <input type="button" value="Send" onclick="sendGet('version')"/>
+        </div>
         <div id="print">
             <h2>POST /api/tip/print <a href="#top">Go to top</a></h2>
             <h3>Print text to the thermal printer (without adding a newline at the end)</h3>
@@ -138,6 +147,19 @@ R"=====(<!DOCTYPE html>
                         alert('Error ' + xmlHttp.status + ': ' + xmlHttp.responseText);
                 }
                 xmlHttp.open("POST", baseAddress() + param, true); // true for asynchronous 
+                xmlHttp.send(null);
+            }
+            function sendGet(param)
+            {
+                var xmlHttp = new XMLHttpRequest();
+                xmlHttp.timeout = 5000;
+                xmlHttp.onreadystatechange = function() { 
+                    if (xmlHttp.readyState == 4 && xmlHttp.status != 200)
+                        alert('Error ' + xmlHttp.status + ': ' + xmlHttp.responseText);
+                    else if(xmlHttp.readyState == 4)
+                        alert(xmlHttp.responseText);
+                }
+                xmlHttp.open("GET", baseAddress() + param, true); // true for asynchronous 
                 xmlHttp.send(null);
             }
         </script>
