@@ -2,7 +2,6 @@
 #include "../defines.h"
 #include <esp_wifi.h>			//Used for mpdu_rx_disable android workaround
 #include <stdlib.h>
-#include <thermal_printer/thermal_printer.h>
 #include "webpages.h"
 
 DNSServer webserver::dnsServer;
@@ -99,6 +98,7 @@ void webserver::configAPI()
 	server.on("/api/tip/print", HTTP_POST, [] (AsyncWebServerRequest *request)
 	{
 		Serial.println("/api/tip/print");
+		webserver::parseAndApplyPrintSettings(request);
 		if(!(request->hasParam("data")))
 		{
 			Serial.println("Missing param 'data' -> 400");
@@ -114,6 +114,7 @@ void webserver::configAPI()
 	server.on("/api/tip/println", HTTP_POST, [] (AsyncWebServerRequest *request)
 	{
 		Serial.println("/api/tip/println");
+		webserver::parseAndApplyPrintSettings(request);
 		String data = "";
 		if(request->hasParam("data"))
 		{
@@ -128,6 +129,7 @@ void webserver::configAPI()
 	server.on("/api/tip/printBitmap", HTTP_POST, [] (AsyncWebServerRequest *request)
 	{
 		Serial.println("/api/tip/printBitmap");
+		webserver::parseAndApplyPrintSettings(request);
 		if(!(request->hasParam("width")))
 		{
 			Serial.println("Missing param 'width' -> 400");
@@ -195,6 +197,7 @@ void webserver::configAPI()
 	server.on("/api/tip/printQRCode", HTTP_POST, [] (AsyncWebServerRequest *request)
 	{
 		Serial.println("/api/tip/printQRCode");
+		webserver::parseAndApplyPrintSettings(request);
 		if(!(request->hasParam("data")))
 		{
 			Serial.println("Missing param 'data' -> 400");
@@ -211,6 +214,7 @@ void webserver::configAPI()
 	server.on("/api/tip/printBarcode_CODE128", HTTP_POST, [] (AsyncWebServerRequest *request)
 	{
 		Serial.println("/api/tip/printBarcode_CODE128");
+		webserver::parseAndApplyPrintSettings(request);
 		if(!(request->hasParam("data")))
 		{
 			Serial.println("Missing param 'data' -> 400");
@@ -227,6 +231,7 @@ void webserver::configAPI()
 	server.on("/api/tip/printBarcode_UPCA", HTTP_POST, [] (AsyncWebServerRequest *request)
 	{
 		Serial.println("/api/tip/printBarcode_UPCA");
+		webserver::parseAndApplyPrintSettings(request);
 		if(!(request->hasParam("data")))
 		{
 			Serial.println("Missing param 'data' -> 400");
@@ -243,6 +248,7 @@ void webserver::configAPI()
 	server.on("/api/tip/printBarcode_EAN13", HTTP_POST, [] (AsyncWebServerRequest *request)
 	{
 		Serial.println("/api/tip/printBarcode_EAN13");
+		webserver::parseAndApplyPrintSettings(request);
 		if(!(request->hasParam("data")))
 		{
 			Serial.println("Missing param 'data' -> 400");
@@ -331,4 +337,80 @@ void webserver::configWebpages()
 		
 		request->send(200, "text/html", webpages::API_TIP_DOC_HTML);
 	});
+}
+
+void webserver::parseAndApplyPrintSettings(AsyncWebServerRequest *request)
+{
+	PRINT_SETTINGS printSettings;
+	String data;
+	
+	// ALIGN MODE
+	if(request->hasParam("align"))
+		data = request->getParam("align")->value();
+	else
+		data = "";
+
+	data.toLowerCase();
+	if(data == "left") printSettings.align_mode = thermal_printer::ALIGN_MODE::LEFT;
+	else if(data == "center") printSettings.align_mode = thermal_printer::ALIGN_MODE::CENTER;
+	else if(data == "right") printSettings.align_mode = thermal_printer::ALIGN_MODE::RIGHT;
+	else printSettings.align_mode = thermal_printer::ALIGN_MODE::LEFT;
+
+	// UNDERLINE MODE
+	if(request->hasParam("underline"))
+		data = request->getParam("underline")->value();
+	else
+		data = "";
+
+	data.toLowerCase();
+	if(data == "off") printSettings.underline_mode = thermal_printer::UNDERLINE_MODE::OFF;
+	else if(data == "onedot") printSettings.underline_mode = thermal_printer::UNDERLINE_MODE::ONE_DOT_THICK;
+	else if(data == "twodot") printSettings.underline_mode = thermal_printer::UNDERLINE_MODE::TWO_DOT_THICK;
+	else printSettings.underline_mode = thermal_printer::UNDERLINE_MODE::OFF;
+
+	// INVERSE MODE
+	if(request->hasParam("inverse"))
+		data = request->getParam("inverse")->value();
+	else
+		data = "";
+
+	data.toLowerCase();
+	if(data == "true") printSettings.inverse_mode = true;
+	else if(data == "false") printSettings.inverse_mode = false;
+	else printSettings.inverse_mode = false;
+
+	// UPSIDE DOWN PRINTING MODE
+	if(request->hasParam("upside_down"))
+		data = request->getParam("upside_down")->value();
+	else
+		data = "";
+
+	data.toLowerCase();
+	if(data == "true") printSettings.upside_down_printing = true;
+	else if(data == "false") printSettings.upside_down_printing = false;
+	else printSettings.upside_down_printing = false;
+
+	webserver::appyPrintSettings(&printSettings);
+}
+
+void webserver::appyPrintSettings(PRINT_SETTINGS *printSettings)
+{
+	Serial.println("Print settings:");
+	Serial.print("align: ");
+	Serial.println(printSettings->align_mode);
+	Serial.print("underline: ");
+	Serial.println(printSettings->underline_mode);
+	Serial.print("inverse: ");
+	Serial.println(printSettings->inverse_mode);
+	Serial.print("upside_down: ");
+	Serial.println(printSettings->upside_down_printing);
+	
+	thermal_printer::align(printSettings->align_mode);
+	delay(PRINT_SETTINGS_DELAY);
+	thermal_printer::underlineMode(printSettings->underline_mode);
+	delay(PRINT_SETTINGS_DELAY);
+	thermal_printer::inverseMode(printSettings->inverse_mode);
+	delay(PRINT_SETTINGS_DELAY);
+	thermal_printer::setGlobalUpsideDown(printSettings->upside_down_printing);
+	delay(PRINT_SETTINGS_DELAY);
 }

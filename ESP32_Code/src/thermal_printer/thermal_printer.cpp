@@ -229,7 +229,6 @@ void thermal_printer::upsideDownPrinting(bool b) {
   printerSerial.write(0x1B);  // ESC
   printerSerial.write(0x7B);  // {
   printerSerial.write(b);     // 0/1 - OFF/ON
-  delay(500);
 }
 
 // Set underline mode - 0=off, 1=1dot thick, 2=2dots thick
@@ -237,7 +236,6 @@ void thermal_printer::underlineMode(UNDERLINE_MODE n) {
   printerSerial.write(0x1B);  // ESC
   printerSerial.write(0x2D);  // -
   printerSerial.write(n);     // 0/1/2
-  delay(500);
 }
 
 // Set text justification - 0=left, 1=center, 2=right
@@ -245,7 +243,6 @@ void thermal_printer::align(ALIGN_MODE n) {
   printerSerial.write(0x1B);  // ESC
   printerSerial.write(0x61);  // a
   printerSerial.write(n);     // 0/1/2
-  delay(500);
 }
 
 // Turn inverse (white on black) mode on/off
@@ -253,7 +250,6 @@ void thermal_printer::inverseMode(bool enable) {
   printerSerial.write(0x1D);  // GS
   printerSerial.write(0x42);  // B
   printerSerial.write(enable);     // 0/1 - OFF/ON
-  delay(500);
 }
 
 // Print bitmap image using standard GS v command - optimized for memory usage
