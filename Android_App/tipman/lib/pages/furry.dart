@@ -7,6 +7,7 @@ import 'package:gal/gal.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:tipman/tip_api.dart';
+import 'package:tipman/preferences.dart';
 
 typedef HeadingEntry = DropdownMenuEntry<Heading>;
 typedef SubHeadingEntry = DropdownMenuEntry<SubHeading>;
@@ -54,9 +55,9 @@ class FurryPage extends StatefulWidget {
 }
 
 class _FurryPageState extends State<FurryPage> {
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   TextStyle textStyle = TextStyle(fontSize: 20);
   final ImagePicker _picker = ImagePicker();
+  var txtController = TextEditingController();
 
   Heading? selectedHeading = Heading.cute;
   SubHeading? selectedSubHeading = SubHeading.spotted;
@@ -68,9 +69,40 @@ class _FurryPageState extends State<FurryPage> {
   bool editInProgress = false;
   bool shouldEditAgain = false;
   bool imageFileFromCamera = true;
-  bool generateQRCode = true;
+  bool generateQRCode = false;
   double? printProgress;
-  bool printButtonEnabled = true;
+
+  Future<void> _loadPreferences() async {
+    int? index = await Preferences.getInt('selectedHeading');
+    if(index != null && index > 0 && index < Heading.entries.length) {
+      setState(() {
+        selectedHeading = Heading.entries[index!].value;
+      });
+    }
+    index = await Preferences.getInt('selectedSubHeading');
+    if(index != null && index > 0 && index < SubHeading.entries.length) {
+      setState(() {
+        selectedSubHeading = SubHeading.entries[index!].value;
+      });
+    }
+    var loc = await Preferences.getString('location');
+    var imgDither = (await Preferences.getDouble('imageDitherThreshold')) ?? 0.5;
+    var genQRCode = (await Preferences.getBool('generateQRCode')) ?? true;
+    setState(() {
+      if(loc != null) {
+        location = loc;
+        txtController.text = loc;
+      }
+      imageDitherThreshold = imgDither;
+      generateQRCode = genQRCode;
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPreferences();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -79,155 +111,162 @@ class _FurryPageState extends State<FurryPage> {
       child: ListView(
         padding: EdgeInsets.all(10),
         children: [
-          Form(
-            key: _formKey,
-            child: Column(
-              spacing: 8,
-              children: <Widget>[
-                DropdownMenuFormField(
-                  textStyle: textStyle,
-                  expandedInsets: EdgeInsets.zero,
-                  initialSelection: selectedHeading,
-                  label: Text('Heading', style: textStyle,),
-                  onSelected: (Heading? heading) {
-                    setState(() {
-                      selectedHeading = heading;
-                      selectedSubHeading = heading?.defaultSubHeading;
-                    });
-                  },
-                  dropdownMenuEntries: Heading.entries,
+          Column(
+            spacing: 8,
+            children: <Widget>[
+              DropdownMenuFormField(
+                textStyle: textStyle,
+                expandedInsets: EdgeInsets.zero,
+                initialSelection: selectedHeading,
+                label: Text('Heading', style: textStyle,),
+                onSelected: (Heading? heading) {
+                  setState(() {
+                    selectedHeading = heading;
+                    selectedSubHeading = heading?.defaultSubHeading;
+                  });
+                  if(selectedHeading != null) {
+                    Preferences.saveInt('selectedHeading', selectedHeading!.index);
+                  }
+                  if(selectedSubHeading != null) {
+                    Preferences.saveInt('selectedSubHeading', selectedSubHeading!.index);
+                  }
+                },
+                dropdownMenuEntries: Heading.entries,
+              ),
+              DropdownMenuFormField(
+                textStyle: textStyle,
+                expandedInsets: EdgeInsets.zero,
+                initialSelection: selectedSubHeading,
+                label: const Text('Sub Heading'),
+                onSelected: (SubHeading? subHeading) {
+                  if(subHeading != null) {
+                    Preferences.saveInt('selectedSubHeading', subHeading.index);
+                  }
+                  setState(() {
+                    selectedSubHeading = subHeading;
+                  });
+                },
+                dropdownMenuEntries: SubHeading.entries,
+              ),
+              TextField(
+                style: textStyle,
+                controller: txtController,
+                decoration: const InputDecoration(
+                  border: UnderlineInputBorder(),
+                  labelText: 'Enter location'
                 ),
-                DropdownMenuFormField(
-                  textStyle: textStyle,
-                  expandedInsets: EdgeInsets.zero,
-                  initialSelection: selectedSubHeading,
-                  label: const Text('Sub Heading'),
-                  onSelected: (SubHeading? subHeading) {
-                    setState(() {
-                      selectedSubHeading = subHeading;
-                    });
-                  },
-                  dropdownMenuEntries: SubHeading.entries,
-                ),
-                TextFormField(
-                  style: textStyle,
-                  decoration: const InputDecoration(
-                    border: UnderlineInputBorder(),
-                    labelText: 'Enter location'
+                onChanged: (String? value) {
+                  location = value;
+                },
+              ),
+              Padding(
+                padding: const EdgeInsetsGeometry.only(top: 20),
+                child: Text('Picture selection:'),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                spacing: 25,
+                children: [
+                  ElevatedButton(
+                    onPressed: () {
+                      _picker.pickImage(source: ImageSource.gallery).then((file) {
+                        setState(() {
+                          imageFile = file;
+                          imageFileFromCamera = false;
+                        });
+                        _editImage();
+                      });
+                    },
+                    child: Text('From Gallery', style: textStyle,),
                   ),
-                  validator: (String? value) {
-                    if(value == null || value.isEmpty) {
-                      return 'Please enter the location';
+                  ElevatedButton(
+                    onPressed: () {
+                      _picker.pickImage(source: ImageSource.camera).then((file) {
+                        setState(() {
+                          imageFile = file;
+                          imageFileFromCamera = true;
+                        });
+                        _editImage();
+                      });
+                    },
+                    child: Text('From Camera', style: textStyle,),
+                  ),
+                ],
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  imageFile != null ?
+                  Image.file(
+                    File(imageFile!.path),
+                    width: (MediaQuery.sizeOf(context).width / 2) - 20,
+                    errorBuilder: (
+                      BuildContext context,
+                      Object error,
+                      StackTrace? stackTrace,
+                    ) {
+                      return Center(
+                        child: Text('Error displaying image', style: textStyle,),
+                      );
                     }
-                    location = value;
-                    return null;
-                  },
-                ),
-                Padding(
-                  padding: const EdgeInsetsGeometry.only(top: 20),
-                  child: Text('Picture selection:'),
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  spacing: 25,
-                  children: [
-                    ElevatedButton(
-                      onPressed: () {
-                        _picker.pickImage(source: ImageSource.gallery).then((file) {
-                          setState(() {
-                            imageFile = file;
-                            imageFileFromCamera = false;
-                          });
-                          _editImage();
-                        });
-                      },
-                      child: Text('From Gallery', style: textStyle,),
-                    ),
-                    ElevatedButton(
-                      onPressed: () {
-                        _picker.pickImage(source: ImageSource.camera).then((file) {
-                          setState(() {
-                            imageFile = file;
-                            imageFileFromCamera = true;
-                          });
-                          _editImage();
-                        });
-                      },
-                      child: Text('From Camera', style: textStyle,),
-                    ),
-                  ],
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    imageFile != null ?
-                    Image.file(
-                      File(imageFile!.path),
-                      width: (MediaQuery.sizeOf(context).width / 2) - 20,
-                      errorBuilder: (
-                        BuildContext context,
-                        Object error,
-                        StackTrace? stackTrace,
-                      ) {
-                        return Center(
-                          child: Text('Error displaying image', style: textStyle,),
-                        );
-                      }
-                    ) :
-                    Center(
-                      child: Text('Please select an image', style: textStyle,),
-                    ),
-                    editedImage ?? Container(),
-                  ],
-                ),
-                Text('Dither Threshold:'),
-                Slider(
-                  value: imageDitherThreshold,
-                  max: 255.0,
-                  min: 0.01,
-                  onChanged: (double value) {
-                    setState(() {
-                      imageDitherThreshold = value;
-                    });
-                    _editImage();
-                  },
-                ),
-                CheckboxListTile(
-                  title: Text('Add QR Code to project website?', style: textStyle,),
-                  value: generateQRCode,
-                  onChanged: (bool? value) {
-                    setState(() {
-                      generateQRCode = value!;
-                    });
-                  },
-                ),
-                printProgress != null ? Container(
-                  padding: EdgeInsets.only(top: 20),
-                  child: Column(
-                    children: [
-                      const Text('Printing Progress:'),
-                      Container(
-                        padding: EdgeInsets.only(top: 10),
-                      ),
-                      LinearProgressIndicator(
-                        value: printProgress,
-                      )
-                    ],
-                  )
-                ) : Container(),
-                Padding(
-                  padding: const EdgeInsetsGeometry.only(top: 25),
-                  child: ElevatedButton(
-                    onPressed: onPrintPressed,
-                    child: Padding(
-                      padding: const EdgeInsetsGeometry.fromLTRB(20, 10, 20, 10),
-                      child: Text('Print', style: textStyle,),
-                    )
+                  ) :
+                  Center(
+                    child: Text('Please select an image', style: textStyle,),
                   ),
+                  editedImage ?? Container(),
+                ],
+              ),
+              Text('Dither Threshold:'),
+              Slider(
+                value: imageDitherThreshold,
+                max: 255.0,
+                min: 0.01,
+                onChanged: (double value) {
+                  Preferences.saveDouble('imageDitherThreshold', imageDitherThreshold);
+                  setState(() {
+                    imageDitherThreshold = value;
+                  });
+                  _editImage();
+                },
+              ),
+              CheckboxListTile(
+                title: Text('Add QR Code to project website?', style: textStyle,),
+                value: generateQRCode,
+                onChanged: (bool? value) {
+                  if(value != null) {
+                    Preferences.saveBool('generateQRCode', value);
+                  }
+                  setState(() {
+                    generateQRCode = value!;
+                  });
+                },
+              ),
+              printProgress != null ? Container(
+                padding: EdgeInsets.only(top: 20),
+                child: Column(
+                  children: [
+                    const Text('Printing Progress:'),
+                    Container(
+                      padding: EdgeInsets.only(top: 10),
+                    ),
+                    LinearProgressIndicator(
+                      value: printProgress,
+                    )
+                  ],
                 )
-              ],
-            )
-          ),
+              ) : Container(),
+              Padding(
+                padding: const EdgeInsetsGeometry.only(top: 25),
+                child: ElevatedButton(
+                  onPressed: onPrintPressed,
+                  child: Padding(
+                    padding: const EdgeInsetsGeometry.fromLTRB(20, 10, 20, 10),
+                    child: Text('Print', style: textStyle,),
+                  )
+                ),
+              )
+            ],
+          )
         ]
       )
     );
@@ -321,69 +360,77 @@ class _FurryPageState extends State<FurryPage> {
 
   void onPrintPressed() async {
     try {
-      if(_formKey.currentState!.validate()) {
+      if(location == null || location!.isEmpty) {
+        showDialogInternal(SimpleDialog(
+          title: const Text('Location not set'),
+          children: [
+            Center(child: const Text('You need to set the location in order to print'))
+          ],
+        ));
+        return;
+      }
+      Preferences.saveString('location', location!);
 
-        if(imageFile != null && imageFileFromCamera) {
-          Gal.putImage(imageFile!.path, album: '${DateFormat('yyyyMMdd').format(DateTime.now())}_$location');
-        }
-        if(!await TipApiHelper.isApiAvailable()) {
-          showDialogInternal(SimpleDialog(
-            title: const Text('API could not be reached'),
-            children: [
-              Center(child: const Text('Call to endpoint /api/tip/version failed'))
-            ],
-          ));
-          setState(() {
-            printProgress = null;
-          });
-          return;
-        }
-        setState(() {
-          printProgress = 0;
-        });
-        await TipApiHelper.println(selectedHeading?.label, TipApiPrintSettings());
-        setState(() {
-          printProgress = 0.2;
-        });
-        await TipApiHelper.println(selectedSubHeading?.label.replaceAll('{location}', location!), TipApiPrintSettings());
-        if(rawEditedImage == null) {
-          showDialogInternal(SimpleDialog(
-            title: const Text('Image was null'),
-            children: [
-              Center(child: const Text('Could not print image as the variable was null'))
-            ],
-          ));
-        }
-        else {
-          setState(() {
-            printProgress = 0.45;
-          });
-          print('Converting to bmp...');
-          var bmp = to1BitBitmap(rawEditedImage!);
-          print('Starting BitMap print...');
-
-          setState(() {
-            printProgress = 0.6;
-          });
-
-          await TipApiHelper.printBitmap(bmp, rawEditedImage!.width, rawEditedImage!.height);
-          print('Starting BitMap print finished!');
-        }
-        setState(() {
-            printProgress = 0.7;
-          });
-        if(generateQRCode) {
-          await TipApiHelper.printQRCode('https://oliverbleen.net/projects/tip', TipApiPrintSettings(alignment: TipApiPrintSettingsAlignment.center));
-        }
-        setState(() {
-            printProgress = 0.99;
-          });
-        await TipApiHelper.spitOut();
-
+      if(imageFile != null && imageFileFromCamera) {
+        Gal.putImage(imageFile!.path, album: '${DateFormat('yyyyMMdd').format(DateTime.now())}_$location');
+      }
+      if(!await TipApiHelper.isApiAvailable()) {
+        showDialogInternal(SimpleDialog(
+          title: const Text('API could not be reached'),
+          children: [
+            Center(child: const Text('Call to endpoint /api/tip/version failed'))
+          ],
+        ));
         setState(() {
           printProgress = null;
         });
+        return;
       }
+      setState(() {
+        printProgress = 0;
+      });
+      await TipApiHelper.println(selectedHeading?.label, TipApiPrintSettings());
+      setState(() {
+        printProgress = 0.2;
+      });
+      await TipApiHelper.println(selectedSubHeading?.label.replaceAll('{location}', location!), TipApiPrintSettings());
+      if(rawEditedImage == null) {
+        showDialogInternal(SimpleDialog(
+          title: const Text('Image was null'),
+          children: [
+            Center(child: const Text('Could not print image as the variable was null'))
+          ],
+        ));
+      }
+      else {
+        setState(() {
+          printProgress = 0.45;
+        });
+        print('Converting to bmp...');
+        var bmp = to1BitBitmap(rawEditedImage!);
+        print('Starting BitMap print...');
+
+        setState(() {
+          printProgress = 0.6;
+        });
+
+        await TipApiHelper.printBitmap(bmp, rawEditedImage!.width, rawEditedImage!.height);
+        print('Starting BitMap print finished!');
+      }
+      setState(() {
+          printProgress = 0.7;
+        });
+      if(generateQRCode) {
+        await TipApiHelper.printQRCode('https://oliverbleen.net/projects/tip', TipApiPrintSettings(alignment: TipApiPrintSettingsAlignment.center));
+      }
+      setState(() {
+          printProgress = 0.99;
+        });
+      await TipApiHelper.spitOut();
+
+      setState(() {
+        printProgress = null;
+      });
     }
     catch (ex) {
       showDialogInternal(SimpleDialog(
