@@ -1,48 +1,61 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 
+enum Settings {
+  selectedHeading('selectedHeading'),
+  selectedSubHeading('selectedSubHeading'),
+  location('location'),
+  imageDitherThreshold('imageDitherThreshold'),
+  generateQRCode('generateQRCode'),
+  saveImagesWhenPrinting('saveImagesWhenPrinting'),
+  saveDitheredImagesWhenPrinting('saveDitheredImagesWhenPrinting');
+  
+  const Settings(this.id);
+  final String id;
+}
+
 class Preferences
 {
-  static Future<bool> saveBool(String key, bool value) async {
+  static Future<bool> saveBool(Settings key, bool value) async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.setBool(key, value);
+    return prefs.setBool(key.id, value);
   }
-  static Future<bool> saveDouble(String key, double value) async {
+  static Future<bool> saveDouble(Settings key, double value) async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.setDouble(key, value);
+    return prefs.setDouble(key.id, value);
   }
-  static Future<bool> saveInt(String key, int value) async {
+  static Future<bool> saveInt(Settings key, int value) async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.setInt(key, value);
+    return prefs.setInt(key.id, value);
   }
-  static Future<bool> saveString(String key, String value) async {
+  static Future<bool> saveString(Settings key, String value) async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.setString(key, value);
+    return prefs.setString(key.id, value);
   }
-  static Future<bool> saveStringList(String key, List<String> value) async {
+  static Future<bool> saveStringList(Settings key, List<String> value) async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.setStringList(key, value);
+    return prefs.setStringList(key.id, value);
   }
 
 
-  static Future<bool?> getBool(String key) async {
+  static Future<bool?> getBool(Settings key) async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(key);
+    return prefs.getBool(key.id);
   }
-  static Future<double?> getDouble(String key) async {
+  static Future<double?> getDouble(Settings key) async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getDouble(key);
+    return prefs.getDouble(key.id);
   }
-  static Future<int?> getInt(String key) async {
+  static Future<int?> getInt(Settings key) async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getInt(key);
+    return prefs.getInt(key.id);
   }
-  static Future<String?> getString(String key) async {
+  static Future<String?> getString(Settings key) async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(key);
+    return prefs.getString(key.id);
   }
-  static Future<List<String>?> getStringList(String key) async {
+  static Future<List<String>?> getStringList(Settings key) async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getStringList(key);
+    return prefs.getStringList(key.id);
   }
 }

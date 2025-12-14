@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:io';
+import 'package:path/path.dart' as p;
 import 'package:image/image.dart' as im;
 import 'package:image_picker/image_picker.dart';
 import 'package:gal/gal.dart';
@@ -73,21 +74,21 @@ class _FurryPageState extends State<FurryPage> {
   double? printProgress;
 
   Future<void> _loadPreferences() async {
-    int? index = await Preferences.getInt('selectedHeading');
+    int? index = await Preferences.getInt(Settings.selectedHeading);
     if(index != null && index > 0 && index < Heading.entries.length) {
       setState(() {
         selectedHeading = Heading.entries[index!].value;
       });
     }
-    index = await Preferences.getInt('selectedSubHeading');
+    index = await Preferences.getInt(Settings.selectedSubHeading);
     if(index != null && index > 0 && index < SubHeading.entries.length) {
       setState(() {
         selectedSubHeading = SubHeading.entries[index!].value;
       });
     }
-    var loc = await Preferences.getString('location');
-    var imgDither = (await Preferences.getDouble('imageDitherThreshold')) ?? 0.5;
-    var genQRCode = (await Preferences.getBool('generateQRCode')) ?? true;
+    var loc = await Preferences.getString(Settings.location);
+    var imgDither = (await Preferences.getDouble(Settings.imageDitherThreshold)) ?? 0.5;
+    var genQRCode = (await Preferences.getBool(Settings.generateQRCode)) ?? true;
     setState(() {
       if(loc != null) {
         location = loc;
@@ -125,10 +126,10 @@ class _FurryPageState extends State<FurryPage> {
                     selectedSubHeading = heading?.defaultSubHeading;
                   });
                   if(selectedHeading != null) {
-                    Preferences.saveInt('selectedHeading', selectedHeading!.index);
+                    Preferences.saveInt(Settings.selectedHeading, selectedHeading!.index);
                   }
                   if(selectedSubHeading != null) {
-                    Preferences.saveInt('selectedSubHeading', selectedSubHeading!.index);
+                    Preferences.saveInt(Settings.selectedSubHeading, selectedSubHeading!.index);
                   }
                 },
                 dropdownMenuEntries: Heading.entries,
@@ -140,7 +141,7 @@ class _FurryPageState extends State<FurryPage> {
                 label: const Text('Sub Heading'),
                 onSelected: (SubHeading? subHeading) {
                   if(subHeading != null) {
-                    Preferences.saveInt('selectedSubHeading', subHeading.index);
+                    Preferences.saveInt(Settings.selectedSubHeading, subHeading.index);
                   }
                   setState(() {
                     selectedSubHeading = subHeading;
@@ -222,7 +223,7 @@ class _FurryPageState extends State<FurryPage> {
                 max: 255.0,
                 min: 0.01,
                 onChanged: (double value) {
-                  Preferences.saveDouble('imageDitherThreshold', imageDitherThreshold);
+                  Preferences.saveDouble(Settings.imageDitherThreshold, imageDitherThreshold);
                   setState(() {
                     imageDitherThreshold = value;
                   });
@@ -234,7 +235,7 @@ class _FurryPageState extends State<FurryPage> {
                 value: generateQRCode,
                 onChanged: (bool? value) {
                   if(value != null) {
-                    Preferences.saveBool('generateQRCode', value);
+                    Preferences.saveBool(Settings.generateQRCode, value);
                   }
                   setState(() {
                     generateQRCode = value!;
@@ -369,10 +370,16 @@ class _FurryPageState extends State<FurryPage> {
         ));
         return;
       }
-      Preferences.saveString('location', location!);
+      Preferences.saveString(Settings.location, location!);
 
-      if(imageFile != null && imageFileFromCamera) {
+      if(imageFile != null && imageFileFromCamera && (await Preferences.getBool(Settings.saveImagesWhenPrinting) ?? true)) {
         Gal.putImage(imageFile!.path, album: '${DateFormat('yyyyMMdd').format(DateTime.now())}_$location');
+      }
+      if(rawEditedImage != null && (await Preferences.getBool(Settings.saveDitheredImagesWhenPrinting) ?? true)) {
+        var filename = '${p.join(p.dirname(imageFile!.path), p.basenameWithoutExtension(imageFile!.path))}_dithered.png';
+        if(await im.encodePngFile(filename, rawEditedImage!)) {
+          Gal.putImage(filename, album: '${DateFormat('yyyyMMdd').format(DateTime.now())}_$location');
+        }
       }
       if(!await TipApiHelper.isApiAvailable()) {
         showDialogInternal(SimpleDialog(
