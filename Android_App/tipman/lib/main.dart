@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tipman/pages/furry.dart';
+import 'package:tipman/pages/settings.dart';
 
 void main() {
   runApp(const TipMan());
@@ -40,6 +41,7 @@ class _MyHomePageState extends State<MyHomePage> {
     'Furry': FurryPage(),
     'Bar': Text('Bar'),
     'Custom': Text('Custom'),
+    'Settings': SettingsPage(),
   };
 
   void _onItemTapped(int index) {
@@ -60,10 +62,14 @@ class _MyHomePageState extends State<MyHomePage> {
         child: _bottomNavBarWidgets.entries.elementAt(_selectedIndex).value,
       ),
       bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: Theme.of(context).colorScheme.primary,
+        unselectedItemColor: Theme.of(context).colorScheme.secondary,
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(icon: Icon(Icons.pets), label: 'Furry'),
           BottomNavigationBarItem(icon: Icon(Icons.local_bar), label: 'Bar'),
           BottomNavigationBarItem(icon: Icon(Icons.draw), label: 'Custom'),
+          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
         ],
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
