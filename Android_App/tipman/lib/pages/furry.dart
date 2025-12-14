@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:collection';
 import 'dart:io';
 import 'package:image/image.dart' as im;
@@ -5,12 +6,13 @@ import 'package:image_picker/image_picker.dart';
 import 'package:gal/gal.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:tipman/tip_api.dart';
 
 typedef HeadingEntry = DropdownMenuEntry<Heading>;
 typedef SubHeadingEntry = DropdownMenuEntry<SubHeading>;
 enum Heading {
   cute('You Cute!', SubHeading.spotted),
-  fine('No Awoo. Fine: 200€', SubHeading.payFine);
+  fine('No Awoo. Fine: Euro 200.00', SubHeading.payFine);
 
   const Heading(this.label, this.defaultSubHeading);
   final String label;
@@ -62,10 +64,13 @@ class _FurryPageState extends State<FurryPage> {
   double imageDitherThreshold = 0.5;
   XFile? imageFile;
   Image? editedImage;
+  im.Image? rawEditedImage;
   bool editInProgress = false;
   bool shouldEditAgain = false;
   bool imageFileFromCamera = true;
   bool generateQRCode = true;
+  double? printProgress;
+  bool printButtonEnabled = true;
 
   @override
   Widget build(BuildContext context) {
@@ -196,16 +201,24 @@ class _FurryPageState extends State<FurryPage> {
                     });
                   },
                 ),
+                printProgress != null ? Container(
+                  padding: EdgeInsets.only(top: 20),
+                  child: Column(
+                    children: [
+                      const Text('Printing Progress:'),
+                      Container(
+                        padding: EdgeInsets.only(top: 10),
+                      ),
+                      LinearProgressIndicator(
+                        value: printProgress,
+                      )
+                    ],
+                  )
+                ) : Container(),
                 Padding(
                   padding: const EdgeInsetsGeometry.only(top: 25),
                   child: ElevatedButton(
-                    onPressed: () {
-                      if(_formKey.currentState!.validate()) {
-                        if(imageFile != null && imageFileFromCamera) {
-                          Gal.putImage(imageFile!.path, album: '${DateFormat('yyyyMMdd').format(DateTime.now())}_$location');
-                        }
-                      }
-                    },
+                    onPressed: onPrintPressed,
                     child: Padding(
                       padding: const EdgeInsetsGeometry.fromLTRB(20, 10, 20, 10),
                       child: Text('Print', style: textStyle,),
@@ -255,7 +268,7 @@ class _FurryPageState extends State<FurryPage> {
             return;
           }
           editedImage = Image.memory(im.encodePng(img), width: (MediaQuery.sizeOf(context).width / 2) - 20);
-
+          rawEditedImage = img;
         });
         /*td.Uint8List rawIn = td.Uint8List(img.width * img.height);
         for(final pixel in img) {
@@ -274,5 +287,124 @@ class _FurryPageState extends State<FurryPage> {
       });
     }
     
+  }
+  List<int> to1BitBitmap(im.Image image) {
+    if(image.width % 8 != 0) {
+      throw Exception('Image width was not divisible by 8');
+    }
+    List<int> out = List.empty(growable: true);
+
+    int counter = 7;
+
+    for(int y = 0; y < image.height; y++) {
+      for(int x = 0; x < image.width; x += 8) {
+        counter = 7;
+        out.add(
+          pixelTo1BitColor(image.getPixel(x+0, y)) << counter-- |
+          pixelTo1BitColor(image.getPixel(x+1, y)) << counter-- |
+          pixelTo1BitColor(image.getPixel(x+2, y)) << counter-- |
+          pixelTo1BitColor(image.getPixel(x+3, y)) << counter-- |
+          pixelTo1BitColor(image.getPixel(x+4, y)) << counter-- |
+          pixelTo1BitColor(image.getPixel(x+5, y)) << counter-- |
+          pixelTo1BitColor(image.getPixel(x+6, y)) << counter-- |
+          pixelTo1BitColor(image.getPixel(x+7, y)) << counter
+        );
+      }
+    }
+
+    return out;
+  }
+
+  int pixelTo1BitColor(im.Pixel pixel) {
+    return pixel.clone().rNormalized > 0.5 ? 0 : 1; // For thermal printer it is backwards
+  }
+
+  void onPrintPressed() async {
+    try {
+      if(_formKey.currentState!.validate()) {
+
+        if(imageFile != null && imageFileFromCamera) {
+          Gal.putImage(imageFile!.path, album: '${DateFormat('yyyyMMdd').format(DateTime.now())}_$location');
+        }
+        if(!await TipApiHelper.isApiAvailable()) {
+          showDialogInternal(SimpleDialog(
+            title: const Text('API could not be reached'),
+            children: [
+              Center(child: const Text('Call to endpoint /api/tip/version failed'))
+            ],
+          ));
+          setState(() {
+            printProgress = null;
+          });
+          return;
+        }
+        setState(() {
+          printProgress = 0;
+        });
+        await TipApiHelper.println(selectedHeading?.label, TipApiPrintSettings());
+        setState(() {
+          printProgress = 0.2;
+        });
+        await TipApiHelper.println(selectedSubHeading?.label.replaceAll('{location}', location!), TipApiPrintSettings());
+        if(rawEditedImage == null) {
+          showDialogInternal(SimpleDialog(
+            title: const Text('Image was null'),
+            children: [
+              Center(child: const Text('Could not print image as the variable was null'))
+            ],
+          ));
+        }
+        else {
+          setState(() {
+            printProgress = 0.45;
+          });
+          print('Converting to bmp...');
+          var bmp = to1BitBitmap(rawEditedImage!);
+          print('Starting BitMap print...');
+
+          setState(() {
+            printProgress = 0.6;
+          });
+
+          await TipApiHelper.printBitmap(bmp, rawEditedImage!.width, rawEditedImage!.height);
+          print('Starting BitMap print finished!');
+        }
+        setState(() {
+            printProgress = 0.7;
+          });
+        if(generateQRCode) {
+          await TipApiHelper.printQRCode('https://oliverbleen.net/projects/tip', TipApiPrintSettings(alignment: TipApiPrintSettingsAlignment.center));
+        }
+        setState(() {
+            printProgress = 0.99;
+          });
+        await TipApiHelper.spitOut();
+
+        setState(() {
+          printProgress = null;
+        });
+      }
+    }
+    catch (ex) {
+      showDialogInternal(SimpleDialog(
+          title: const Text('Error occured during printing'),
+          children: [
+            Center(child: Text(ex.toString()))
+          ],
+      ));
+      setState(() {
+        printProgress = null;
+      });
+    }
+    
+  }
+  void showDialogInternal(Widget widget)
+  {
+    if(mounted) {
+      showDialog(
+        context: context,
+        builder: (context) => widget,
+      );
+    }
   }
 }
