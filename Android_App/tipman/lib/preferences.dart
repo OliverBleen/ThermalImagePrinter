@@ -7,6 +7,7 @@ enum Settings {
   location('location'),
   imageDitherThreshold('imageDitherThreshold'),
   generateQRCode('generateQRCode'),
+  addTimeStamp('addTimeStamp'),
   saveImagesWhenPrinting('saveImagesWhenPrinting'),
   saveDitheredImagesWhenPrinting('saveDitheredImagesWhenPrinting');
   

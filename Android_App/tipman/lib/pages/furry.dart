@@ -71,6 +71,7 @@ class _FurryPageState extends State<FurryPage> {
   bool shouldEditAgain = false;
   bool imageFileFromCamera = true;
   bool generateQRCode = false;
+  bool addTimeStamp = true;
   double? printProgress;
 
   Future<void> _loadPreferences() async {
@@ -89,6 +90,7 @@ class _FurryPageState extends State<FurryPage> {
     var loc = await Preferences.getString(Settings.location);
     var imgDither = (await Preferences.getDouble(Settings.imageDitherThreshold)) ?? 0.5;
     var genQRCode = (await Preferences.getBool(Settings.generateQRCode)) ?? true;
+    var addTimeStmp = (await Preferences.getBool(Settings.addTimeStamp)) ?? true;
     setState(() {
       if(loc != null) {
         location = loc;
@@ -96,6 +98,7 @@ class _FurryPageState extends State<FurryPage> {
       }
       imageDitherThreshold = imgDither;
       generateQRCode = genQRCode;
+      addTimeStamp = addTimeStmp;
     });
   }
 
@@ -231,11 +234,24 @@ class _FurryPageState extends State<FurryPage> {
                 },
               ),
               CheckboxListTile(
-                title: Text('Add QR Code to project website?', style: textStyle,),
+                title: Text('Add QR Code?', style: textStyle,),
+                subtitle: const Text('Add QR Code to project website?'),
                 value: generateQRCode,
                 onChanged: (bool? value) {
                   if(value != null) {
                     Preferences.saveBool(Settings.generateQRCode, value);
+                  }
+                  setState(() {
+                    generateQRCode = value!;
+                  });
+                },
+              ),
+              CheckboxListTile(
+                title: Text('Add Timestamp?', style: textStyle,),
+                value: generateQRCode,
+                onChanged: (bool? value) {
+                  if(value != null) {
+                    Preferences.saveBool(Settings.addTimeStamp, value);
                   }
                   setState(() {
                     generateQRCode = value!;
@@ -429,6 +445,12 @@ class _FurryPageState extends State<FurryPage> {
         });
       if(generateQRCode) {
         await TipApiHelper.printQRCode('https://oliverbleen.net/projects/tip', TipApiPrintSettings(alignment: TipApiPrintSettingsAlignment.center));
+      }
+      setState(() {
+          printProgress = 0.85;
+        });
+      if(addTimeStamp) {
+        await TipApiHelper.println(DateTime.now().toUtc().toIso8601String(), TipApiPrintSettings());
       }
       setState(() {
           printProgress = 0.99;
