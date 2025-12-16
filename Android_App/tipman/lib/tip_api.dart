@@ -98,9 +98,12 @@ class TipApiHelper
       bitmapLines.add(data.getRange((i*(width/8)).round(), ((i+1)*(width/8)).round()).toList());
     }
 
-    for(int i = 0; i * 10 < height; i++) {
-      var range = bitmapLines.getRange(i*10, (i+1)*10 <= bitmapLines.length ? (i+1)*10 : bitmapLines.length);
+    final int linesAtATime = 30;
+    for(int i = 0; i * linesAtATime < height; i++) {
+      var range = bitmapLines.getRange(i*linesAtATime, (i+1)*linesAtATime <= bitmapLines.length ? (i+1)*linesAtATime : bitmapLines.length);
+      print('Post bitmap data');
       await postBitmapData(toFlatList(range.toList(growable: false)));
+      print('Post bitmap');
       await postBitmap(width, range.length);
     }
 
@@ -121,7 +124,7 @@ class TipApiHelper
     try {
       var uri = Uri.http(_baseAddress, '/api/tip/uploadBitmapData');
       log('HTTP POST: ${uri.toString()}', level: 800);
-      return http.post(uri, body: data).timeout(const Duration(seconds: 3));
+      return http.post(uri, body: data).timeout(const Duration(seconds: 5));
     }
     catch (ex) {
       print('postBitmapData ERROR: $ex');
@@ -133,7 +136,7 @@ class TipApiHelper
     try {
       var uri = Uri.http(_baseAddress, '/api/tip/printBitmap', <String, String>{'width': width.toString(), 'height': height.toString()});
       log('HTTP POST: ${uri.toString()}', level: 800);
-      return http.post(uri).timeout(const Duration(seconds: 5));
+      return http.post(uri).timeout(const Duration(seconds: 10));
     }
     catch (ex) {
       print('postBitmap ERROR: $ex');
