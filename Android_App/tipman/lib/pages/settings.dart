@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:tipman/preferences.dart';
 
 
@@ -16,6 +18,8 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _saveImagesWhenPrinting = true;
   bool _saveDitheredImagesWhenPrinting = true;
 
+  int cacheSize = 0;
+
   Future<void> _loadPreferences() async {
     var saveImagesWhenPrinting = await Preferences.getBool(Settings.saveImagesWhenPrinting);
     var saveDitheredImagesWhenPrinting = await Preferences.getBool(Settings.saveDitheredImagesWhenPrinting);
@@ -23,6 +27,11 @@ class _SettingsPageState extends State<SettingsPage> {
     setState(() {
       _saveImagesWhenPrinting = saveImagesWhenPrinting ?? true;
       _saveDitheredImagesWhenPrinting = saveDitheredImagesWhenPrinting ?? true;
+    });
+
+    var cacheDirSize = await dirStat((await getTemporaryDirectory()).path);
+    setState(() {
+      cacheSize = cacheDirSize;
     });
   }
 
@@ -64,8 +73,69 @@ class _SettingsPageState extends State<SettingsPage> {
               });
             },
           ),
+          Padding(
+            padding: const EdgeInsetsGeometry.only(top: 25),
+            child: ElevatedButton(
+              onPressed: onClearCachePressed,
+              child: Padding(
+                padding: const EdgeInsetsGeometry.fromLTRB(20, 10, 20, 10),
+                child: Column(
+                  children: [
+                    Text('Clear Cache', style: textStyle,),
+                    Text('Size: ${(cacheSize/1024/1024).toStringAsFixed(2)}MiB',)
+                  ],
+                ),
+              )
+            ),
+          )
         ],
       ),
     );
+  }
+
+  void onClearCachePressed() async {
+    final Directory cacheDir = await getTemporaryDirectory();
+    await cacheDir.delete(recursive: true);
+    await cacheDir.create();
+
+    showDialogInternal(SimpleDialog(
+      title: const Text('Cleared cache'),
+      children: [
+        Center(child: const Text('Cache has been cleared'))
+      ],
+    ));
+
+    var cacheDirSize = await dirStat((await getTemporaryDirectory()).path);
+    setState(() {
+      cacheSize = cacheDirSize;
+    });
+  }
+  void showDialogInternal(Widget widget)
+  {
+    if(mounted) {
+      showDialog(
+        context: context,
+        builder: (context) => widget,
+      );
+    }
+  }
+
+  Future<int> dirStat(String dirPath) async {
+    int totalSize = 0;
+    var dir = Directory(dirPath);
+    try {
+      if (await dir.exists()) {
+        await dir.list(recursive: true, followLinks: false)
+          .forEach((FileSystemEntity entity) async {
+            if (entity is File) {
+              totalSize += await entity.length();
+            }
+          });
+      }
+    } catch (e) {
+      //Do nothing
+    }
+
+    return totalSize;
   }
 }
