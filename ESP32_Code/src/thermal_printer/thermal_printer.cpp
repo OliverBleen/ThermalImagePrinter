@@ -372,7 +372,6 @@ void thermal_printer::printBitmapDC2_Method(const unsigned char* progmemData, ui
   printerSerial.write(0x12);  // DC2
   printerSerial.write(0x23);  // #
   printerSerial.write(0x9F);  // Maximum darkness setting
-  delay(50);
 
   Serial.println("Using DC2 * method (Method 1)...");
 
@@ -402,7 +401,6 @@ void thermal_printer::printBitmapDC2_Method(const unsigned char* progmemData, ui
   printerSerial.write(0x12);  // DC2
   printerSerial.write(0x23);  // #
   printerSerial.write(0x58);  // Normal darkness setting
-  delay(50);
 }
 
 // Helper function: Rotate a 1bpp bitmap by 180 degrees
@@ -439,8 +437,7 @@ uint8_t* thermal_printer::rotateBitmap1bpp_180(const uint8_t* src, uint16_t widt
 
 // Main bitmap printing method using GS v command with chunking
 // This is the primary method for printing large images efficiently
-void thermal_printer::printBitmapGS_Method(const unsigned char* progmemData, uint16_t width, uint16_t height) {
-  upsideDownPrinting(globalUpsideDown ? 1 : 0);
+void thermal_printer::printBitmapGS_Method(const uint8_t* data, uint16_t width, uint16_t height) {
   align(ALIGN_MODE::CENTER);  // Center align for images
   
   // Set printer to maximum darkness for better image quality
@@ -449,36 +446,11 @@ void thermal_printer::printBitmapGS_Method(const unsigned char* progmemData, uin
   printerSerial.write(0x9F);  // Maximum darkness
   delay(50);
 
-  const unsigned char* dataToPrint = progmemData;
   int w = width, h = height;
-  uint8_t* rotated = nullptr;
-
-  // Handle global upside-down printing by rotating the entire image
-  if (globalUpsideDown) {
-    // Copy from PROGMEM to RAM, then rotate 180°
-    int bytesPerLine = (width + 7) / 8;
-    int totalBytes = bytesPerLine * height;
-    
-    uint8_t* ramCopy = (uint8_t*)malloc(totalBytes);
-    if (ramCopy) {
-      // Copy image data from PROGMEM to RAM for rotation
-      for (int i = 0; i < totalBytes; ++i)
-        ramCopy[i] = pgm_read_byte(progmemData + i);
-      
-      // Rotate the image 180 degrees
-      rotated = rotateBitmap1bpp_180(ramCopy, width, height);
-      free(ramCopy);
-      
-      if (rotated) {
-        dataToPrint = rotated;
-      }
-    }
-  }
 
   // Validate image dimensions
   if (w <= 0 || h <= 0) {
     Serial.println("Invalid image size");
-    if (rotated) free(rotated);
     return;
   }
 
@@ -514,7 +486,7 @@ void thermal_printer::printBitmapGS_Method(const unsigned char* progmemData, uin
     for (int row = 0; row < linesInChunk; row++) {
       int baseIndex = (chunk * 24 + row) * bytesPerLine;
       for (int col = 0; col < bytesPerLine; col++) {
-        printerSerial.write(dataToPrint[baseIndex + col]);
+        printerSerial.write(data[baseIndex + col]);
       }
     }
     
@@ -533,9 +505,6 @@ void thermal_printer::printBitmapGS_Method(const unsigned char* progmemData, uin
   printerSerial.write(0x23);  // #
   printerSerial.write(0x58);  // Normal darkness
   delay(50);
-  
-  // Clean up rotated image memory if allocated
-  if (rotated) free(rotated);
 }
 
 void thermal_printer::print(const char* data)

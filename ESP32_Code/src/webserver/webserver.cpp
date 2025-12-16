@@ -2,11 +2,13 @@
 #include "../defines.h"
 #include <esp_wifi.h>			//Used for mpdu_rx_disable android workaround
 #include <stdlib.h>
+#include <algorithm>
+#include <iterator>
 #include "webpages.h"
 
 DNSServer webserver::dnsServer;
 AsyncWebServer webserver::server(80);
-uint8_t webserver::bitmapData[(384*10 +7)/8];
+uint8_t webserver::bitmapData[(384*100 +7)/8];
 
 void webserver::begin()
 {
@@ -187,14 +189,18 @@ void webserver::configAPI()
 			request->send(400, "text", "Invalid value for 'width' > 384");
 			return;
 		}
-		if(height > 10)
+		if(height > 100)
 		{
 			Serial.println("Invalid value for 'height' > 10");
 			request->send(400, "text", "Invalid value for 'height' > 10");
 			return;
 		}
 
+		// Set darkness to 200% for better image
+		parseAndApplyPrintSettings(request);
+		thermal_printer::setDarknessAndDelay(200, 500);
 		thermal_printer::printBitmap(bitmapData, width, height);
+		thermal_printer::setDarknessAndDelay(100, 500);
 
 		request->send(200);
 	});
@@ -312,10 +318,9 @@ void webserver::configAPI()
 void webserver::handleBitmapData(AsyncWebServerRequest *request, uint8_t *data, size_t len)
 {
 	Serial.println("Handle bitmap data");
-	for (size_t i = 0; i < len; i++)
-	{
-		bitmapData[i] = data[i];
-	}
+
+	std::copy(data, data + sizeof(data[0]) * len, std::begin(bitmapData));
+
 	Serial.print(len);
 	Serial.println(" bytes");
 	
