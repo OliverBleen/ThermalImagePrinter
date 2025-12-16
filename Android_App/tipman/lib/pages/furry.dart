@@ -76,13 +76,13 @@ class _FurryPageState extends State<FurryPage> {
 
   Future<void> _loadPreferences() async {
     int? index = await Preferences.getInt(Settings.selectedHeading);
-    if(index != null && index > 0 && index < Heading.entries.length) {
+    if(index != null && index >= 0 && index < Heading.entries.length) {
       setState(() {
         selectedHeading = Heading.entries[index!].value;
       });
     }
     index = await Preferences.getInt(Settings.selectedSubHeading);
-    if(index != null && index > 0 && index < SubHeading.entries.length) {
+    if(index != null && index >= 0 && index < SubHeading.entries.length) {
       setState(() {
         selectedSubHeading = SubHeading.entries[index!].value;
       });
@@ -141,7 +141,7 @@ class _FurryPageState extends State<FurryPage> {
                 textStyle: textStyle,
                 expandedInsets: EdgeInsets.zero,
                 initialSelection: selectedSubHeading,
-                label: const Text('Sub Heading'),
+                label: Text('Sub Heading', style: textStyle,),
                 onSelected: (SubHeading? subHeading) {
                   if(subHeading != null) {
                     Preferences.saveInt(Settings.selectedSubHeading, subHeading.index);
@@ -248,13 +248,13 @@ class _FurryPageState extends State<FurryPage> {
               ),
               CheckboxListTile(
                 title: Text('Add Timestamp?', style: textStyle,),
-                value: generateQRCode,
+                value: addTimeStamp,
                 onChanged: (bool? value) {
                   if(value != null) {
                     Preferences.saveBool(Settings.addTimeStamp, value);
                   }
                   setState(() {
-                    generateQRCode = value!;
+                    addTimeStamp = value!;
                   });
                 },
               ),
