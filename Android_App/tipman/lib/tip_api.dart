@@ -1,5 +1,7 @@
 import 'dart:developer';
 import 'dart:core';
+import 'package:flutter/material.dart';
+import 'dart:collection';
 import 'package:http/http.dart' as http;
 
 class TipApiHelper
@@ -141,8 +143,35 @@ class TipApiHelper
 }
 
 
-enum TipApiPrintSettingsAlignment { left, center, right }
-enum TipApiPrintSettingsUnderline { off, onedot, twodot }
+typedef TipApiPrintSettingsAlignmentEntry = DropdownMenuEntry<TipApiPrintSettingsAlignment>;
+typedef TipApiPrintSettingsUnderlineEntry = DropdownMenuEntry<TipApiPrintSettingsUnderline>;
+
+enum TipApiPrintSettingsAlignment {
+  left, center, right;
+
+  static final List<TipApiPrintSettingsAlignmentEntry> entries =
+    UnmodifiableListView<TipApiPrintSettingsAlignmentEntry>(
+      values.map<TipApiPrintSettingsAlignmentEntry>(
+        (TipApiPrintSettingsAlignment heading) => TipApiPrintSettingsAlignmentEntry(
+          value: heading,
+          label: heading.name,
+        ),
+      ),
+    );
+}
+enum TipApiPrintSettingsUnderline {
+  off, onedot, twodot;
+
+  static final List<TipApiPrintSettingsUnderlineEntry> entries =
+    UnmodifiableListView<TipApiPrintSettingsUnderlineEntry>(
+      values.map<TipApiPrintSettingsUnderlineEntry>(
+        (TipApiPrintSettingsUnderline heading) => TipApiPrintSettingsUnderlineEntry(
+          value: heading,
+          label: heading.name,
+        ),
+      ),
+    );
+}
 
 class TipApiPrintSettings
 {

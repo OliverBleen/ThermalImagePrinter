@@ -9,7 +9,11 @@ enum Settings {
   generateQRCode('generateQRCode'),
   addTimeStamp('addTimeStamp'),
   saveImagesWhenPrinting('saveImagesWhenPrinting'),
-  saveDitheredImagesWhenPrinting('saveDitheredImagesWhenPrinting');
+  saveDitheredImagesWhenPrinting('saveDitheredImagesWhenPrinting'),
+  customAlignment('customAlignment'),
+  customUnderline('customUnderline'),
+  customInverse('customInverse'),
+  customUpsideDown('customUpsideDown');
   
   const Settings(this.id);
   final String id;
