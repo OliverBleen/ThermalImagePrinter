@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tipman/pages/furry.dart';
 import 'package:tipman/pages/custom.dart';
+import 'package:tipman/pages/bar.dart';
 import 'package:tipman/pages/settings.dart';
 
 void main() {
@@ -40,7 +41,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   static const Map<String, Widget> _bottomNavBarWidgets = <String, Widget>{
     'Furry': FurryPage(),
-    'Bar': Text('Bar'),
+    'Bar': BarPage(),
     'Custom': CustomPage(),
     'Settings': SettingsPage(),
   };
