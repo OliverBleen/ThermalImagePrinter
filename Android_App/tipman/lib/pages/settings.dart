@@ -18,7 +18,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   bool _saveImagesWhenPrinting = true;
   bool _saveDitheredImagesWhenPrinting = true;
-  PackageInfo packageInfo = new PackageInfo(appName: 'Loading...', packageName: 'Loading...', version: '0.0.0', buildNumber: '00');
+  PackageInfo packageInfo = PackageInfo(appName: 'Loading...', packageName: 'Loading...', version: '0.0.0', buildNumber: '00');
 
 
   int cacheSize = 0;
