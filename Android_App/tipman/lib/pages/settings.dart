@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:tipman/preferences.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 
 class SettingsPage extends StatefulWidget {
@@ -17,12 +18,15 @@ class _SettingsPageState extends State<SettingsPage> {
 
   bool _saveImagesWhenPrinting = true;
   bool _saveDitheredImagesWhenPrinting = true;
+  PackageInfo packageInfo = new PackageInfo(appName: 'Loading...', packageName: 'Loading...', version: '0.0.0', buildNumber: '00');
+
 
   int cacheSize = 0;
 
   Future<void> _loadPreferences() async {
     var saveImagesWhenPrinting = await Preferences.getBool(Settings.saveImagesWhenPrinting);
     var saveDitheredImagesWhenPrinting = await Preferences.getBool(Settings.saveDitheredImagesWhenPrinting);
+    var pkgInfo = await PackageInfo.fromPlatform();
 
     setState(() {
       _saveImagesWhenPrinting = saveImagesWhenPrinting ?? true;
@@ -32,6 +36,9 @@ class _SettingsPageState extends State<SettingsPage> {
     var cacheDirSize = await dirStat((await getTemporaryDirectory()).path);
     setState(() {
       cacheSize = cacheDirSize;
+    });
+    setState(() {
+      packageInfo = pkgInfo;
     });
   }
 
@@ -87,7 +94,9 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
               )
             ),
-          )
+          ),
+          Spacer(),
+          Text('${packageInfo.appName} v${packageInfo.version}, build ${packageInfo.buildNumber}'),
         ],
       ),
     );
@@ -135,7 +144,6 @@ class _SettingsPageState extends State<SettingsPage> {
     } catch (e) {
       //Do nothing
     }
-
     return totalSize;
   }
 }
