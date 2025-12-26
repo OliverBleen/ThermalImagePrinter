@@ -161,6 +161,9 @@ class _FurryPageState extends State<FurryPage> {
                 ),
                 onChanged: (String? value) {
                   location = value;
+                  if(value != null) {
+                    Preferences.saveString(Settings.imageDitherThreshold, value);
+                  }
                 },
               ),
               Padding(
@@ -429,16 +432,13 @@ class _FurryPageState extends State<FurryPage> {
         setState(() {
           printProgress = 0.45;
         });
-        print('Converting to bmp...');
         var bmp = to1BitBitmap(rawEditedImage!);
-        print('Starting BitMap print...');
 
         setState(() {
           printProgress = 0.6;
         });
 
         await TipApiHelper.printBitmap(bmp, rawEditedImage!.width, rawEditedImage!.height);
-        print('Starting BitMap print finished!');
       }
       setState(() {
           printProgress = 0.7;
