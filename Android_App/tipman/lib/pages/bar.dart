@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:tipman/preferences.dart';
+import 'package:tipman/pages/edit_drinks.dart';
 import 'package:tipman/tip_api.dart';
 
 
@@ -14,18 +15,38 @@ class BarPage extends StatefulWidget {
 class _BarPageState extends State<BarPage> {
   TextStyle textStyle = TextStyle(fontSize: 20);
   var txtController = TextEditingController();
+ 
 
-  List<Drink> availableDrinks = [
-    Drink('Tequila Lemon Tea', 500),
-    Drink('Auslaender Rum', 1000),
-    Drink('Lecker Bierchen', 1000),
-  ];
+  List<Drink> availableDrinks = List.empty(growable: true);
   Map<Drink, int> selectedDrinks = Map.identity();
   String? name;
 
 
   Future<void> _loadPreferences() async {
+    var barName = await Preferences.getString(Settings.barName) ?? '';
+    setState(() {
+      name = barName;
+      txtController.text = barName;
+    });
+    var drinks = await Preferences.getStringList(Settings.barDrinks);
+    var tmpDrinks = List<Drink>.empty(growable: true);
+    if(drinks != null) {
+      availableDrinks.clear();
+      for(var drink in drinks) {
+        try {
+          var name = drink.split('=').first;
+          var price = int.parse(drink.split('=').last);
+          tmpDrinks.add(Drink(name, price));
+        }
+        catch (ex) {
+          showError(drink, 'Could not parse drink');
+        }
+      }
 
+      setState(() {
+        availableDrinks.addAll(tmpDrinks);
+      });
+    }
   }
 
   @override
@@ -50,6 +71,9 @@ class _BarPageState extends State<BarPage> {
             ),
             onChanged: (String? value) {
               name = value;
+              if(value != null) {
+                Preferences.saveString(Settings.barName, value);
+              }
             },
           ),
           Expanded(
@@ -84,19 +108,28 @@ class _BarPageState extends State<BarPage> {
                   });
                 },
                 child: Padding(
-                  padding: const EdgeInsetsGeometry.fromLTRB(20, 10, 20, 10),
+                  padding: const EdgeInsetsGeometry.fromLTRB(5, 10, 5, 10),
                   child: Text('Reset', style: textStyle,),
+                )
+              ),
+              Spacer(),
+              ElevatedButton(
+                onPressed: editDrinks,
+                child: Padding(
+                  padding: const EdgeInsetsGeometry.fromLTRB(5, 10, 5, 10),
+                  child: Text('Edit Drinks', style: textStyle,),
                 )
               ),
               Spacer(),
               ElevatedButton(
                 onPressed: printFullReceipt,
                 child: Padding(
-                  padding: const EdgeInsetsGeometry.fromLTRB(20, 10, 20, 10),
+                  padding: const EdgeInsetsGeometry.fromLTRB(10, 10, 10, 10),
                   child: Text('Print', style: textStyle,),
                 )
               ),
-            ],)
+            ],
+          )
         ],
       ),
     );
@@ -217,6 +250,15 @@ class _BarPageState extends State<BarPage> {
     await TipApiHelper.spitOut();
   }
 
+  void showError(String text, String title) {
+    showDialogInternal(SimpleDialog(
+      title: Text(title),
+      children: [
+        Center(child: Text(text))
+      ],
+    ));
+  }
+
   void showDialogInternal(Widget widget)
   {
     if(mounted) {
@@ -225,6 +267,10 @@ class _BarPageState extends State<BarPage> {
         builder: (context) => widget,
       );
     }
+  }
+
+  void editDrinks() {
+    showDialogInternal(const EditDrinksPage());
   }
 }
 

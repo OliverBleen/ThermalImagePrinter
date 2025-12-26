@@ -13,7 +13,9 @@ enum Settings {
   customAlignment('customAlignment'),
   customUnderline('customUnderline'),
   customInverse('customInverse'),
-  customUpsideDown('customUpsideDown');
+  customUpsideDown('customUpsideDown'),
+  barName('barName'),
+  barDrinks('barDrinks');
   
   const Settings(this.id);
   final String id;
