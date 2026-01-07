@@ -6,6 +6,7 @@ enum Settings {
   selectedSubHeading('selectedSubHeading'),
   location('location'),
   imageDitherThreshold('imageDitherThreshold'),
+  printHeadingAsBitmap('printHeadingAsBitmap'),
   generateQRCode('generateQRCode'),
   addTimeStamp('addTimeStamp'),
   saveImagesWhenPrinting('saveImagesWhenPrinting'),

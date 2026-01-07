@@ -97,11 +97,11 @@ class TipApiHelper
     {
       bitmapLines.add(data.getRange((i*(width/8)).round(), ((i+1)*(width/8)).round()).toList());
     }
-
+    print('Bitmap has ${bitmapLines.length} lines');
     final int linesAtATime = 30;
     for(int i = 0; i * linesAtATime < height; i++) {
       var range = bitmapLines.getRange(i*linesAtATime, (i+1)*linesAtATime <= bitmapLines.length ? (i+1)*linesAtATime : bitmapLines.length);
-      print('Post bitmap data');
+      print('Post bitmap data: ${((i+1)*linesAtATime <= bitmapLines.length ? (i+1)*linesAtATime : bitmapLines.length) - i*linesAtATime} [${i*linesAtATime}..${(i+1)*linesAtATime <= bitmapLines.length ? (i+1)*linesAtATime : bitmapLines.length}]');
       await postBitmapData(toFlatList(range.toList(growable: false)));
       print('Post bitmap');
       await postBitmap(width, range.length);
