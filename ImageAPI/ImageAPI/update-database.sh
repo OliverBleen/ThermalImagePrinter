@@ -1,0 +1,1 @@
+dotnet ef dbcontext scaffold "Filename=Models/Database/Database.sqlite3" Microsoft.EntityFrameworkCore.Sqlite -o Models/Database --force
