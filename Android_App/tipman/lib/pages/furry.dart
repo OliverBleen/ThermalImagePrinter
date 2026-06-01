@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:gal/gal.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:image_cropper/image_cropper.dart';
 import 'package:tipman/tip_api.dart';
 import 'package:tipman/preferences.dart';
 
@@ -68,6 +69,7 @@ class _FurryPageState extends State<FurryPage> {
   String? location;
   double imageDitherThreshold = 0.5;
   XFile? imageFile;
+  CroppedFile? _croppedFile;
   Image? editedImage;
   im.Image? rawEditedImage;
   bool editInProgress = false;
@@ -229,6 +231,13 @@ class _FurryPageState extends State<FurryPage> {
                   editedImage ?? Container(),
                 ],
               ),
+              ElevatedButton(
+                onPressed: () async {
+                  await _cropImage();
+                  _editImage();
+                },
+                child: Text('Crop Image', style: textStyle,),
+              ),
               Text('Dither Threshold:'),
               Slider(
                 value: imageDitherThreshold,
@@ -311,6 +320,41 @@ class _FurryPageState extends State<FurryPage> {
     );
   }
 
+  Future<void> _cropImage() async {
+    if (imageFile != null) {
+      final croppedFile = await ImageCropper().cropImage(
+        sourcePath: imageFile!.path,
+        compressFormat: ImageCompressFormat.png,
+        compressQuality: 100,
+        uiSettings: [
+          AndroidUiSettings(
+            toolbarTitle: 'Crop Image',
+            toolbarColor: Theme.of(context).colorScheme.inversePrimary,
+            statusBarLight: Theme.of(context).colorScheme.brightness == Brightness.light,
+            navBarLight: Theme.of(context).colorScheme.brightness == Brightness.light,
+            toolbarWidgetColor: Theme.of(context).colorScheme.inverseSurface,
+            initAspectRatio: CropAspectRatioPreset.original,
+            activeControlsWidgetColor: Theme.of(context).colorScheme.primary,
+            showCropGrid: false,
+            hideBottomControls: false,
+            lockAspectRatio: false,
+            aspectRatioPresets: [
+              CropAspectRatioPreset.original,
+            ],
+          ),
+          IOSUiSettings(
+            title: 'Crop Image',
+          ),
+        ],
+      );
+      if (croppedFile != null) {
+        setState(() {
+          _croppedFile = croppedFile;
+        });
+      }
+    }
+  }
+
   void _editImage() {
     if(editInProgress) {
       shouldEditAgain = true;
@@ -328,10 +372,10 @@ class _FurryPageState extends State<FurryPage> {
           shouldEditAgain = false;
         });
 
-        if(imageFile == null) {
+        if(_croppedFile == null) {
           return;
         }
-        im.Image? img = im.decodeImage(await File(imageFile!.path).readAsBytes());
+        im.Image? img = im.decodeImage(await _croppedFile!.readAsBytes());
         if(img == null) {
           return;
         }
