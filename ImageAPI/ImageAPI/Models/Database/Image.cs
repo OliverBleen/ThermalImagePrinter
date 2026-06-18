@@ -11,5 +11,7 @@ public partial class Image
 
     public string TimestampCreated { get; set; } = null!;
 
+    public string ContentType { get; set; } = null!;
+
     public virtual Album AlbumTitleNavigation { get; set; } = null!;
 }

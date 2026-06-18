@@ -55,7 +55,7 @@ class DatabaseHelper
 
     #region Image
 
-    public static async Task CreateImage(Guid imageId, string albumTitle)
+    public static async Task CreateImage(Guid imageId, string albumTitle, string contentType)
     {
         using var _context = new DatabaseContext();
         
@@ -70,6 +70,7 @@ class DatabaseHelper
             Id = imageId.ToString(),
             AlbumTitle = albumTitle,
             TimestampCreated = DateTime.UtcNow.ToString("s", System.Globalization.CultureInfo.InvariantCulture),
+            ContentType = contentType,
         });
         await _context.SaveChangesAsync();
     }
