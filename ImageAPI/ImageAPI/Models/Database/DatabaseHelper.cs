@@ -1,6 +1,8 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using SQLitePCL;
 
 namespace ImageAPI.Models.Database;
 
@@ -23,5 +25,54 @@ class DatabaseHelper
         var accessTo = key.AccessTo.Split(";");
         return accessTo.Contains(section);
     }
+    #endregion
+
+    #region Album
+
+    public static async Task CreateOrUpdateAlbum(string albumTitle)
+    {
+        using var _context = new DatabaseContext();
+
+        var existingAlbum = await _context.Albums.FirstOrDefaultAsync(a => a.Title == albumTitle);
+        
+        if(existingAlbum != null)
+        {
+            existingAlbum.TimestampLastUpdate = DateTime.UtcNow.ToString("s", System.Globalization.CultureInfo.InvariantCulture);
+        }
+        else
+        {
+            await _context.Albums.AddAsync(new Album()
+            {
+                Title = albumTitle,
+                TimestampCreated = DateTime.UtcNow.ToString("s", System.Globalization.CultureInfo.InvariantCulture),
+                TimestampLastUpdate = DateTime.UtcNow.ToString("s", System.Globalization.CultureInfo.InvariantCulture),
+            });
+        }
+        await _context.SaveChangesAsync();
+    }
+
+    #endregion
+
+    #region Image
+
+    public static async Task CreateImage(Guid imageId, string albumTitle)
+    {
+        using var _context = new DatabaseContext();
+        
+        if(await _context.Images.AnyAsync(i => i.Id == imageId.ToString()))
+            throw new Exception($"Image with ID '{imageId}' already exsists");
+
+        if(!await _context.Albums.AnyAsync(a => a.Title == albumTitle))
+            throw new Exception($"No album with title '{albumTitle}' exists");
+
+        await _context.Images.AddAsync(new Image()
+        {
+            Id = imageId.ToString(),
+            AlbumTitle = albumTitle,
+            TimestampCreated = DateTime.UtcNow.ToString("s", System.Globalization.CultureInfo.InvariantCulture),
+        });
+        await _context.SaveChangesAsync();
+    }
+
     #endregion
 }
