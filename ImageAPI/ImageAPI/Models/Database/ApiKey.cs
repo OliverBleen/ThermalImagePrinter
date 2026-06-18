@@ -5,7 +5,7 @@ namespace ImageAPI.Models.Database;
 
 public partial class ApiKey
 {
-    public string Key { get; set; } = null!;
+    public Guid Key { get; set; }
 
     public string AccessTo { get; set; } = null!;
 
