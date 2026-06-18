@@ -22,21 +22,5 @@ namespace ImageAPI.Controllers
         {
             return Program.API_VERSION;
         }
-
-        // GET: datetimeUTC
-        [HttpGet("datetimeUTC")]
-        [ApiKeyAuthFilter("*")]
-        public string GetDatetimeUTC()
-        {
-            return DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
-        }
-
-        // GET: datetimeLocal
-        [HttpGet("datetimeLocal")]
-        [ApiKeyAuthFilter("*")]
-        public string GetDatetimeLocal()
-        {
-            return DateTime.Now.ToString("o", CultureInfo.InvariantCulture);
-        }
     }
 }
