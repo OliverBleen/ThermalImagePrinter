@@ -15,7 +15,7 @@ public class ImagesController : ControllerBase
 {
     public ImagesController() { }
 
-    [HttpPost("Upload")]
+    [HttpPost("Upload/{albumTitle}/{uuid}")]
     [ApiKeyAuthFilter("Upload")]
     public async Task<ActionResult> UploadImage(string albumTitle, string uuid, IFormFile imageData)
     {
@@ -31,7 +31,7 @@ public class ImagesController : ControllerBase
         return Ok();
     }
 
-    [HttpGet("Get")]
+    [HttpGet("Get/{uuid}")]
     [ApiKeyAuthFilter("Get")]
     public async Task<ActionResult> GetImage(string uuid)
     {
@@ -41,7 +41,7 @@ public class ImagesController : ControllerBase
         var img = await DatabaseHelper.GetImageAsync(imageUuid);
 
         if(img == null)
-            return BadRequest($"No image with UUID '{uuid}' exists");
+            return NotFound($"No image with UUID '{uuid}' exists");
 
         var imgStream = await FileManager.GetImage(img);
 
@@ -49,5 +49,20 @@ public class ImagesController : ControllerBase
             return StatusCode(550, "The requested image exists in the Database, but not on disk");
 
         return imgStream;
+    }
+
+    [HttpGet("GetMetadata/{uuid}")]
+    [ApiKeyAuthFilter("Get")]
+    public async Task<ActionResult<ApiResponseImage>> GetImageMetadata(string uuid)
+    {
+        if(!Guid.TryParse(uuid, out var imageUuid))
+            return BadRequest($"Given Image UUID does not have a valid format: '{uuid}'");
+
+        var img = await DatabaseHelper.GetImageAsync(imageUuid);
+
+        if(img == null)
+            return NotFound($"No image with UUID '{uuid}' exists");
+
+        return new ApiResponseImage(img);
     }
 }
