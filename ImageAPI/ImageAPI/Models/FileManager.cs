@@ -1,7 +1,9 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using ImageAPI.Models.Database;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 
 namespace ImageAPI.Models;
 
@@ -18,5 +20,20 @@ static class FileManager
         using var outputStream = File.Create(imageFilePath);
 
         await imageData.CopyToAsync(outputStream);
+    }
+
+    public static async Task<FileStreamResult?> GetImage(Image img)
+    {
+        var albumDir = Path.Combine(Program.BASE_DIR, img.AlbumTitle);
+        
+        if(!Directory.Exists(albumDir))
+            return null;
+
+        var imageFilePath = Path.Combine(albumDir, img.Id.ToString());
+        
+        if(!File.Exists(imageFilePath))
+            return null;
+        
+        return new FileStreamResult(new FileStream(imageFilePath, FileMode.Open), img.ContentType);
     }
 }

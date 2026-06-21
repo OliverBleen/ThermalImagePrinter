@@ -12,7 +12,7 @@ namespace ImageAPI;
 
 public class Program
 {
-    public static readonly string API_VERSION = "v0.7.0";
+    public static readonly string API_VERSION = "v1.0.0";
     // => optionsBuilder.UseSqlite($"Filename={Path.Combine(Program.BASE_DIR, "Database.sqlite3")}");
     public static readonly string BASE_DIR = "./bin/Debug/";
 

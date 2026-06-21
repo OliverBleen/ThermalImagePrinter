@@ -75,5 +75,12 @@ class DatabaseHelper
         await _context.SaveChangesAsync();
     }
 
+    public static async Task<Image?> GetImageAsync(Guid imageId)
+    {
+        using var _context = new DatabaseContext();
+
+        return await _context.Images.FirstOrDefaultAsync(i => i.Id == imageId.ToString());
+    }
+
     #endregion
 }
