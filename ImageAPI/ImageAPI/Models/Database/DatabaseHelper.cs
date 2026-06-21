@@ -51,6 +51,17 @@ class DatabaseHelper
         await _context.SaveChangesAsync();
     }
 
+    public static async Task<ApiResponseAlbum?> GetAlbumAsync(string albumTitle)
+    {
+        using var _context = new DatabaseContext();
+        var album = await _context.Albums.Include(a => a.Images).FirstOrDefaultAsync(a => a.Title == albumTitle);
+
+        if(album == null)
+            return null;
+
+        return new ApiResponseAlbum(album);
+    }
+
     #endregion
 
     #region Image

@@ -1,0 +1,30 @@
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+using ImageAPI.Authentication;
+using Microsoft.AspNetCore.Http;
+using ImageAPI.Models.Database;
+using System;
+using ImageAPI.Models;
+using Microsoft.AspNetCore.Http.HttpResults;
+using System.Collections.Generic;
+
+namespace ImageAPI.Controllers;
+
+[Route("api/[controller]")]
+[ApiController]
+public class AlbumsController : ControllerBase
+{
+    public AlbumsController() { }
+
+    [HttpGet("Get/{albumName}")]
+    [ApiKeyAuthFilter("Get")]
+    public async Task<ActionResult<ApiResponseAlbum>> GetAlbum(string albumName)
+    {
+        var album = await DatabaseHelper.GetAlbumAsync(albumName);
+
+        if(album == null)
+            return NotFound($"No album with name '{albumName}' exists");
+
+        return album;
+    }
+}
