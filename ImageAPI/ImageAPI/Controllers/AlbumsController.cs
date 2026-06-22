@@ -27,4 +27,13 @@ public class AlbumsController : ControllerBase
 
         return album;
     }
+
+    [HttpGet("GetAll")]
+    [ApiKeyAuthFilter("Get")]
+    public async Task<ActionResult<List<Album>>> GetAllAlbums()
+    {
+        var albums = await DatabaseHelper.GetAllAlbumsAsync();
+
+        return albums;
+    }
 }

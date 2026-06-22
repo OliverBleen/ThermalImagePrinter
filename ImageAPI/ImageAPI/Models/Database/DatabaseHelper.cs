@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -60,6 +61,12 @@ class DatabaseHelper
             return null;
 
         return new ApiResponseAlbum(album);
+    }
+
+    public static async Task<List<Album>> GetAllAlbumsAsync()
+    {
+        using var _context = new DatabaseContext();
+        return await _context.Albums.OrderByDescending(a => a.TimestampLastUpdate).ToListAsync();
     }
 
     #endregion
