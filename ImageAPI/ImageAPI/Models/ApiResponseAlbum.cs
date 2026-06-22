@@ -18,6 +18,6 @@ public class ApiResponseAlbum
         this.Title = album.Title;
         this.TimestampCreated = album.TimestampCreated;
         this.TimestampLastUpdate = album.TimestampLastUpdate;
-        this.Images = [.. album.Images.Select(i => new ApiResponseImage(i))];
+        this.Images = [.. album.Images.OrderByDescending(i => i.TimestampCreated).Select(i => new ApiResponseImage(i))];
     }
 }
