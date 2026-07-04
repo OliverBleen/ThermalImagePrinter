@@ -7,6 +7,7 @@ using System;
 using ImageAPI.Models;
 using Microsoft.AspNetCore.Http.HttpResults;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace ImageAPI.Controllers;
 
@@ -30,10 +31,10 @@ public class AlbumsController : ControllerBase
 
     [HttpGet("GetAll")]
     [ApiKeyAuthFilter("Get")]
-    public async Task<ActionResult<List<Album>>> GetAllAlbums()
+    public async Task<ActionResult<List<ApiResponseAlbumWithImageCount>>> GetAllAlbums()
     {
         var albums = await DatabaseHelper.GetAllAlbumsAsync();
 
-        return albums;
+        return albums.Select(a => new ApiResponseAlbumWithImageCount(a)).ToList();
     }
 }
