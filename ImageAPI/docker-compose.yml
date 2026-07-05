@@ -1,0 +1,9 @@
+services:
+    imageapi:
+        image: imageapi:latest
+        tty: true
+        ports:
+            - "8000:8080"
+        restart: unless-stopped
+        volumes:
+            - /run/media/patzminihd/OB_DATA/Projects/Combined/ThermalImagePrinter/ImageAPI/ImageAPI/bin/Debug:/data
