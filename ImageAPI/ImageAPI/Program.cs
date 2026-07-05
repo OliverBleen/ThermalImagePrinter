@@ -12,9 +12,9 @@ namespace ImageAPI;
 
 public class Program
 {
-    public static readonly string API_VERSION = "v1.6.0";
+    public static readonly string API_VERSION = "v1.6.1";
     // => optionsBuilder.UseSqlite($"Filename={Path.Combine(Program.BASE_DIR, "Database.sqlite3")}");
-    public static readonly string BASE_DIR = "./bin/Debug/";
+    public static string BASE_DIR = "./bin/Debug/";
 
     public static void Main(string[] args)
     {
@@ -66,6 +66,10 @@ public class Program
             app.UseSwagger();
             app.UseSwaggerUI();
         }
+        if(app.Environment.IsProduction())
+        {
+            BASE_DIR = "/data/";
+        }
 
         app.UseHttpsRedirection();
 
@@ -73,6 +77,8 @@ public class Program
 
         app.MapControllers();
 
+        Console.WriteLine($"ImageAPI {API_VERSION}");
+        Console.WriteLine($"BASE_DIR: '{BASE_DIR}'");
         app.Run();
     }
     record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
