@@ -32,7 +32,6 @@ public class ImagesController : ControllerBase
     }
 
     [HttpGet("Get/{uuid}")]
-    [ApiKeyAuthFilter("Get")]
     public async Task<ActionResult> GetImage(string uuid)
     {
         if(!Guid.TryParse(uuid, out var imageUuid))
