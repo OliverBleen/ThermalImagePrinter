@@ -73,14 +73,12 @@ class DatabaseHelper
     {
         using var _context = new DatabaseContext();
 
-        var album = await _context.Albums.FirstOrDefaultAsync(a => a.Title == albumTitle);
+        var album = await _context.Albums.Include(a => a.Images).FirstOrDefaultAsync(a => a.Title == albumTitle);
         
         if(album == null)
             return;
         
         _context.Images.RemoveRange(album.Images);
-
-        await _context.SaveChangesAsync();
 
         _context.Albums.Remove(album);
         
