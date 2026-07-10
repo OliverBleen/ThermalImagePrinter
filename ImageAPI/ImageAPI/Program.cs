@@ -8,6 +8,7 @@ using Microsoft.OpenApi.Models;
 using ImageAPI.Authentication;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
+using System.IO;
 
 namespace ImageAPI;
 
@@ -84,6 +85,7 @@ public class Program
 
         app.Logger.LogInformation($"ImageAPI {API_VERSION}");
         app.Logger.LogInformation($"BASE_DIR: '{BASE_DIR}'");
+        app.Logger.LogCritical(string.Join("\n", Directory.GetFiles("/certs/")));
         ApiKeyAuthFilter.Logger = app.Logger;
         app.Run();
     }
