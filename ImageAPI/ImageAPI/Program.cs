@@ -14,7 +14,7 @@ namespace ImageAPI;
 
 public class Program
 {
-    public static readonly string API_VERSION = "v1.7.3";
+    public static readonly string API_VERSION = "v1.7.4";
     // => optionsBuilder.UseSqlite($"Filename={Path.Combine(Program.BASE_DIR, "Database.sqlite3")}");
     public static string BASE_DIR = "./bin/Debug/";
 
@@ -85,7 +85,6 @@ public class Program
 
         app.Logger.LogInformation($"ImageAPI {API_VERSION}");
         app.Logger.LogInformation($"BASE_DIR: '{BASE_DIR}'");
-        app.Logger.LogCritical(string.Join("\n", File.ReadAllLines("/certs/fullchain.pem")));
         ApiKeyAuthFilter.Logger = app.Logger;
         app.Run();
     }
