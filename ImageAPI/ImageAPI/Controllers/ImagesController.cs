@@ -87,4 +87,31 @@ public class ImagesController : ControllerBase
         _logger.LogInformation($"Serving image metadata '{uuid}'");
         return new ApiResponseImage(img);
     }
+
+
+    [HttpDelete("Delete/{uuid}")]
+    [ApiKeyAuthFilter("Delete")]
+    public async Task<ActionResult> DeleteImage(string uuid)
+    {
+        if(!Guid.TryParse(uuid, out var imageUuid))
+        {
+            _logger.LogWarning($"Delete image with malformed UUID: '{uuid}'");
+            return BadRequest($"Given Image UUID does not have a valid format: '{uuid}'");
+        }
+
+        var img = await DatabaseHelper.GetImageAsync(imageUuid);
+
+        if(img == null)
+        {
+            _logger.LogWarning($"Delete image not found: '{uuid}'");
+            return NotFound($"No image with UUID '{uuid}' exists");
+        }
+
+        await FileManager.DeleteImage(img);
+
+        await DatabaseHelper.DeleteImageAsync(imageUuid);
+
+        _logger.LogInformation($"Serving image '{uuid}'");
+        return Ok();
+    }
 }

@@ -36,4 +36,28 @@ static class FileManager
         
         return new FileStreamResult(new FileStream(imageFilePath, FileMode.Open), img.ContentType);
     }
+
+    public static async Task DeleteImage(Image img)
+    {
+        var albumDir = Path.Combine(Program.BASE_DIR, img.AlbumTitle);
+        
+        if(!Directory.Exists(albumDir))
+            return;
+
+        var imageFilePath = Path.Combine(albumDir, img.Id.ToString());
+        
+        if(!File.Exists(imageFilePath))
+            return;
+        
+        File.Delete(imageFilePath);
+    }
+
+    public static async Task DeleteAlbum(string albumTitle)
+    {
+        var albumDir = Path.Combine(Program.BASE_DIR, albumTitle);
+        if(!Directory.Exists(albumDir))
+            return;
+
+        Directory.Delete(albumDir, true);
+    }
 }

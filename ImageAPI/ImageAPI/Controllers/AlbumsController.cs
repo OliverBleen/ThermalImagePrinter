@@ -44,4 +44,24 @@ public class AlbumsController : ControllerBase
         _logger.LogInformation($"Serving all albums");
         return albums.Select(a => new ApiResponseAlbumWithImageCount(a)).ToList();
     }
+
+    [HttpDelete("Delete/{albumName}")]
+    [ApiKeyAuthFilter("Delete")]
+    public async Task<ActionResult> DeleteAlbum(string albumName)
+    {
+        var album = await DatabaseHelper.GetAlbumAsync(albumName);
+
+        if(album == null)
+        {
+            _logger.LogWarning($"Delete album '{albumName}' does not exist");
+            return NotFound($"No album with name '{albumName}' exists");
+        }
+
+        await FileManager.DeleteAlbum(albumName);
+
+        await DatabaseHelper.DeleteAlbumAsync(albumName);
+        
+        _logger.LogInformation($"Deleting album '{albumName}'");
+        return Ok();
+    }
 }

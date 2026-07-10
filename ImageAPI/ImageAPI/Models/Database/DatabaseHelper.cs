@@ -69,6 +69,21 @@ class DatabaseHelper
         return await _context.Albums.Include(a => a.Images).OrderByDescending(a => a.TimestampLastUpdate).ToListAsync();
     }
 
+    public static async Task DeleteAlbumAsync(string albumTitle)
+    {
+        using var _context = new DatabaseContext();
+
+        var album = await _context.Albums.FirstOrDefaultAsync(a => a.Title == albumTitle);
+        
+        if(album == null)
+            return;
+        
+        _context.Images.RemoveRange(album.Images);
+        _context.Albums.Remove(album);
+        
+        await _context.SaveChangesAsync();
+    }
+
     #endregion
 
     #region Image
@@ -98,6 +113,17 @@ class DatabaseHelper
         using var _context = new DatabaseContext();
 
         return await _context.Images.FirstOrDefaultAsync(i => i.Id == imageId.ToString());
+    }
+    public static async Task DeleteImageAsync(Guid imageId)
+    {
+        using var _context = new DatabaseContext();
+
+        var image = await _context.Images.FirstOrDefaultAsync(i => i.Id == imageId.ToString());
+        if(image == null)
+            return;
+
+        _context.Images.Remove(image);
+        await _context.SaveChangesAsync();
     }
 
     #endregion
