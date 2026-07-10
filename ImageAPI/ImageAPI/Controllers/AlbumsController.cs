@@ -8,6 +8,7 @@ using ImageAPI.Models;
 using Microsoft.AspNetCore.Http.HttpResults;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Extensions.Logging;
 
 namespace ImageAPI.Controllers;
 
@@ -15,7 +16,8 @@ namespace ImageAPI.Controllers;
 [ApiController]
 public class AlbumsController : ControllerBase
 {
-    public AlbumsController() { }
+    private readonly ILogger<AlbumsController> _logger;
+    public AlbumsController(ILogger<AlbumsController> logger) { _logger = logger; }
 
     [HttpGet("Get/{albumName}")]
     [ApiKeyAuthFilter("Get")]
@@ -24,8 +26,12 @@ public class AlbumsController : ControllerBase
         var album = await DatabaseHelper.GetAlbumAsync(albumName);
 
         if(album == null)
+        {
+            _logger.LogWarning($"Requested album '{albumName}' does not exist");
             return NotFound($"No album with name '{albumName}' exists");
-
+        }
+        
+        _logger.LogInformation($"Serving album '{albumName}'");
         return album;
     }
 
@@ -34,7 +40,8 @@ public class AlbumsController : ControllerBase
     public async Task<ActionResult<List<ApiResponseAlbumWithImageCount>>> GetAllAlbums()
     {
         var albums = await DatabaseHelper.GetAllAlbumsAsync();
-
+        
+        _logger.LogInformation($"Serving all albums");
         return albums.Select(a => new ApiResponseAlbumWithImageCount(a)).ToList();
     }
 }

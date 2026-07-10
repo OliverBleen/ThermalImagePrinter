@@ -6,6 +6,7 @@ using ImageAPI.Models.Database;
 using System;
 using ImageAPI.Models;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.Extensions.Logging;
 
 namespace ImageAPI.Controllers;
 
@@ -13,7 +14,8 @@ namespace ImageAPI.Controllers;
 [ApiController]
 public class ImagesController : ControllerBase
 {
-    public ImagesController() { }
+    private readonly ILogger<ImagesController> _logger;
+    public ImagesController(ILogger<ImagesController> logger) { _logger = logger; }
 
     [HttpPost("Upload/{albumTitle}/{uuid}")]
     [ApiKeyAuthFilter("Upload")]
@@ -22,12 +24,16 @@ public class ImagesController : ControllerBase
         await DatabaseHelper.CreateOrUpdateAlbum(albumTitle);
 
         if(!Guid.TryParse(uuid, out var imageUuid))
+        {
+            _logger.LogWarning($"Upload image with malformed UUID: '{uuid}', AlbumTitle: '{albumTitle}'");
             return BadRequest($"Given Image UUID does not have a valid format: '{uuid}'");
+        }
 
         await DatabaseHelper.CreateImage(imageUuid, albumTitle, imageData.ContentType);
 
         await FileManager.CreateImage(albumTitle, imageUuid, imageData);
 
+        _logger.LogInformation($"Uploaded image '{uuid}', Album: '{albumTitle}'");
         return Ok();
     }
 
@@ -35,18 +41,28 @@ public class ImagesController : ControllerBase
     public async Task<ActionResult> GetImage(string uuid)
     {
         if(!Guid.TryParse(uuid, out var imageUuid))
+        {
+            _logger.LogWarning($"Get image with malformed UUID: '{uuid}'");
             return BadRequest($"Given Image UUID does not have a valid format: '{uuid}'");
+        }
 
         var img = await DatabaseHelper.GetImageAsync(imageUuid);
 
         if(img == null)
+        {
+            _logger.LogWarning($"Get image not found: '{uuid}'");
             return NotFound($"No image with UUID '{uuid}' exists");
+        }
 
         var imgStream = await FileManager.GetImage(img);
 
         if(imgStream == null)
+        {
+            _logger.LogError($"Image in database but not on disk: '{uuid}', Album: '{img.AlbumTitle}'");
             return StatusCode(550, "The requested image exists in the Database, but not on disk");
+        }
 
+        _logger.LogInformation($"Serving image '{uuid}'");
         return imgStream;
     }
 
@@ -55,13 +71,20 @@ public class ImagesController : ControllerBase
     public async Task<ActionResult<ApiResponseImage>> GetImageMetadata(string uuid)
     {
         if(!Guid.TryParse(uuid, out var imageUuid))
+        {
+            _logger.LogWarning($"Get image metadata with malformed UUID: '{uuid}'");
             return BadRequest($"Given Image UUID does not have a valid format: '{uuid}'");
+        }
 
         var img = await DatabaseHelper.GetImageAsync(imageUuid);
 
         if(img == null)
+        {
+            _logger.LogWarning($"Get image metadata not found: '{uuid}'");
             return NotFound($"No image with UUID '{uuid}' exists");
+        }
 
+        _logger.LogInformation($"Serving image metadata '{uuid}'");
         return new ApiResponseImage(img);
     }
 }

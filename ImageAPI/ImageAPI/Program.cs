@@ -7,12 +7,13 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 using ImageAPI.Authentication;
 using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
 
 namespace ImageAPI;
 
 public class Program
 {
-    public static readonly string API_VERSION = "v1.6.2";
+    public static readonly string API_VERSION = "v1.6.3";
     // => optionsBuilder.UseSqlite($"Filename={Path.Combine(Program.BASE_DIR, "Database.sqlite3")}");
     public static string BASE_DIR = "./bin/Debug/";
 
@@ -56,6 +57,10 @@ public class Program
             s.AddSecurityRequirement(requirement);
         });
 
+
+        builder.Logging.ClearProviders();
+        builder.Logging.AddConsole();
+
         builder.Services.AddScoped<ApiKeyAuthFilter>();
 
         var app = builder.Build();
@@ -77,8 +82,9 @@ public class Program
 
         app.MapControllers();
 
-        Console.WriteLine($"ImageAPI {API_VERSION}");
-        Console.WriteLine($"BASE_DIR: '{BASE_DIR}'");
+        app.Logger.LogInformation($"ImageAPI {API_VERSION}");
+        app.Logger.LogInformation($"BASE_DIR: '{BASE_DIR}'");
+        ApiKeyAuthFilter.Logger = app.Logger;
         app.Run();
     }
     record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)

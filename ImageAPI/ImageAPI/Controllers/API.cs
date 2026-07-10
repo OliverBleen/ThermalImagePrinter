@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using ImageAPI.Authentication;
 using System;
+using Microsoft.Extensions.Logging;
 
 namespace ImageAPI.Controllers
 {
@@ -9,17 +10,20 @@ namespace ImageAPI.Controllers
     [ApiController]
     public class API : ControllerBase
     {
-
-        public API()
+        private readonly ILogger<API> _logger;
+        public API(ILogger<API> logger)
         {
+            _logger = logger;
         }
 
 
-        // GET: version
+        // GET: version 
         [HttpGet("version")]
         [ApiKeyAuthFilter("*")]
         public string GetAPIVersion()
         {
+            // Warning because this is usually not called in production code
+            _logger.LogWarning("Serving API Version");
             return Program.API_VERSION;
         }
     }
