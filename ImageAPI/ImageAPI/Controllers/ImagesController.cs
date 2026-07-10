@@ -111,7 +111,7 @@ public class ImagesController : ControllerBase
 
         await DatabaseHelper.DeleteImageAsync(imageUuid);
 
-        _logger.LogInformation($"Serving image '{uuid}'");
+        _logger.LogInformation($"Deleting image '{uuid}'");
         return Ok();
     }
 }
