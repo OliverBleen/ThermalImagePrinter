@@ -79,6 +79,9 @@ class DatabaseHelper
             return;
         
         _context.Images.RemoveRange(album.Images);
+
+        await _context.SaveChangesAsync();
+
         _context.Albums.Remove(album);
         
         await _context.SaveChangesAsync();
