@@ -85,7 +85,7 @@ public class Program
 
         app.Logger.LogInformation($"ImageAPI {API_VERSION}");
         app.Logger.LogInformation($"BASE_DIR: '{BASE_DIR}'");
-        app.Logger.LogCritical(string.Join("\n", Directory.GetFiles("/certs/")));
+        app.Logger.LogCritical(string.Join("\n", File.ReadAllLines("/certs/fullchain.pem")));
         ApiKeyAuthFilter.Logger = app.Logger;
         app.Run();
     }
