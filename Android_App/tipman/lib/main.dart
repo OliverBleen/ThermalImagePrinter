@@ -3,9 +3,26 @@ import 'package:tipman/pages/furry.dart';
 import 'package:tipman/pages/custom.dart';
 import 'package:tipman/pages/bar.dart';
 import 'package:tipman/pages/settings.dart';
+import 'package:tipman/esp_socket.dart';
+import 'package:flutter/services.dart';
+import 'dart:io';
 
-void main() {
-  runApp(const TipMan());
+
+final navigatorKey = GlobalKey<NavigatorState>();
+
+void main() async {
+  EspSocket.startHandeling();
+
+  WidgetsFlutterBinding.ensureInitialized();
+
+  ByteData data = await PlatformAssetBundle().load('assets/ca/isrg-root-x2.pem');
+  SecurityContext.defaultContext.setTrustedCertificatesBytes(data.buffer.asUint8List());
+
+
+  runApp(MaterialApp(
+    home: TipMan(),
+    navigatorKey: navigatorKey,
+  ));
 }
 
 class TipMan extends StatelessWidget {
@@ -79,3 +96,18 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 }
+
+void showDialogInternal(String title, String message)
+  {
+    if(navigatorKey.currentContext != null) {
+      showDialog(
+        context: navigatorKey.currentContext!,
+        builder: (context) => SimpleDialog(
+          title: Text(title),
+          children: [
+            Center(child: Text(message))
+          ],
+      ),
+      );
+    }
+  }
