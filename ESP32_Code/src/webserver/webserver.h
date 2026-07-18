@@ -30,4 +30,5 @@ class webserver
 
     public:
     static void begin();
+    static void setupWiFi();
 };

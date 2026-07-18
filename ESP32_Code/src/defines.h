@@ -1,4 +1,4 @@
-#define VERSION "1.1.0"
+#define VERSION "2.0.0"
 
 
 #define LOCAL_IP 4,3,2,1
@@ -10,5 +10,6 @@
 #define WIFI_CHANNEL 6
 #define WIFI_MAX_CONNECTIONS 4
 #define DNS_TTL 3600
+#define ERROR_LED_PIN 2
 
 #define PRINT_SETTINGS_DELAY 5

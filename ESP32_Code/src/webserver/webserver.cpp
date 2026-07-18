@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <iterator>
 #include "webpages.h"
+#include "../Secrets/Secrets.h"
 
 DNSServer webserver::dnsServer;
 AsyncWebServer webserver::server(80);
@@ -12,21 +13,90 @@ uint8_t webserver::bitmapData[(384*100 +7)/8];
 
 void webserver::begin()
 {
-    WiFi.mode(WIFI_MODE_AP);
-    WiFi.softAPConfig(IPAddress(LOCAL_IP), IPAddress(GATEWAY_IP), IPAddress(SUBNET_MASK));
-    WiFi.softAP(WIFI_SSID, WIFI_PASSWORD, WIFI_CHANNEL, 0, WIFI_MAX_CONNECTIONS);
-    // Disable AMPDU RX on the ESP32 WiFi to fix a bug on Android
-	esp_wifi_stop();
-	esp_wifi_deinit();
-	wifi_init_config_t my_config = WIFI_INIT_CONFIG_DEFAULT();
-	my_config.ampdu_rx_enable = false;
-	esp_wifi_init(&my_config);
-	esp_wifi_start();
-	vTaskDelay(100 / portTICK_PERIOD_MS);  // Add a small delay
+	setupWiFi();
 
-    setupDNS();
+	vTaskDelay(100 / portTICK_PERIOD_MS);
+
+    //setupDNS();
     serve();
 }
+void webserver::setupWiFi()
+{
+	while(WiFi.status() != WL_CONNECTED)
+	{
+		WiFi.mode(WIFI_MODE_STA);
+		WiFi.hostname("thermal-image-printer");
+		WiFi.begin(Secrets::WiFi_SSID, Secrets::WiFi_PASSWD);
+		
+		Serial.printf("[%u] Waiting for initial WiFi connection...\r\n", millis());
+		while(WiFi.status() != WL_CONNECTED)
+		{
+			digitalWrite(ERROR_LED_PIN, HIGH);
+			vTaskDelay(500 / portTICK_PERIOD_MS);
+			Serial.printf("[%u] Waiting for initial WiFi connection...\r\n", millis());
+			digitalWrite(ERROR_LED_PIN, HIGH);
+			vTaskDelay(500 / portTICK_PERIOD_MS);
+		}
+	}
+
+	IPAddress localIP = WiFi.localIP();
+	IPAddress gatewayIP = WiFi.gatewayIP();
+
+	Serial.printf(
+		"[%u] WiFI Connected! Config:\r\nIP: %u.%u.%u.%u\r\nGateway: %u.%u.%u.%u\r\n",
+		millis(),
+		localIP[0], localIP[1], localIP[2], localIP[3],
+		gatewayIP[0], gatewayIP[1], gatewayIP[2], gatewayIP[3]);
+
+	vTaskDelay(500 / portTICK_PERIOD_MS);
+
+	WiFiClient socket;
+
+	Serial.printf("[%u] Waiting for connection on port 3621...\r\n", millis());
+	while(!socket.connect(gatewayIP, 3621))
+	{
+		if(WiFi.status() != WL_CONNECTED)
+		{
+			Serial.printf("[%u] WiFi disconnected, returning...\r\n", millis());
+			return;
+		}
+
+		digitalWrite(ERROR_LED_PIN, HIGH);
+		vTaskDelay(500 / portTICK_PERIOD_MS);
+		Serial.printf("[%u] Waiting for connection on port 3621...\r\n", millis());
+		digitalWrite(ERROR_LED_PIN, HIGH);
+		vTaskDelay(500 / portTICK_PERIOD_MS);
+	}
+
+	Serial.printf("[%u] Connected to phone on port 3621, sending IP address...\r\n", millis());
+
+	while(socket.read() != 33)
+	{
+		if(WiFi.status() != WL_CONNECTED)
+		{
+			Serial.printf("[%u] WiFi disconnected, returning...\r\n", millis());
+			return;
+		}
+		if(!socket.connected())
+		{
+			Serial.printf("[%u] Socket disconnected, returning...\r\n", millis());
+			return;
+		}
+		digitalWrite(ERROR_LED_PIN, HIGH);
+		vTaskDelay(500 / portTICK_PERIOD_MS);
+		Serial.printf("[%u] Sending IP address...\r\n", millis());
+		digitalWrite(ERROR_LED_PIN, HIGH);
+		vTaskDelay(500 / portTICK_PERIOD_MS);
+		socket.print("TIP");
+		socket.write(localIP[0]);
+		socket.write(localIP[1]);
+		socket.write(localIP[2]);
+		socket.write(localIP[3]);
+		socket.print("\r\n");
+		socket.flush();
+	}
+}
+
 void webserver::setupDNS()
 {
     dnsServer.setTTL(DNS_TTL);
