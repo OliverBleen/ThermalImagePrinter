@@ -8,7 +8,9 @@ import 'package:gal/gal.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:image_cropper/image_cropper.dart';
+import 'package:uuid/uuid.dart';
 import 'package:tipman/tip_api.dart';
+import 'package:tipman/image_api.dart';
 import 'package:tipman/preferences.dart';
 
 typedef HeadingEntry = DropdownMenuEntry<Heading>;
@@ -453,9 +455,10 @@ class _FurryPageState extends State<FurryPage> {
         return;
       }
       Preferences.saveString(Settings.location, location!);
+      var imageUuid = Uuid().v4();
 
-      if(imageFile != null && imageFileFromCamera && (await Preferences.getBool(Settings.saveImagesWhenPrinting) ?? true)) {
-        Gal.putImage(imageFile!.path, album: '${DateFormat('yyyyMMdd').format(DateTime.now())}_$location');
+      if(_croppedFile != null && imageFileFromCamera && (await Preferences.getBool(Settings.saveImagesWhenPrinting) ?? true)) {
+        Gal.putImage(_croppedFile!.path, album: '${DateFormat('yyyyMMdd').format(DateTime.now())}_$location');
       }
       if(rawEditedImage != null && (await Preferences.getBool(Settings.saveDitheredImagesWhenPrinting) ?? true)) {
         var filename = '${p.join(p.dirname(imageFile!.path), p.basenameWithoutExtension(imageFile!.path))}_dithered.png';
@@ -463,11 +466,25 @@ class _FurryPageState extends State<FurryPage> {
           Gal.putImage(filename, album: '${DateFormat('yyyyMMdd').format(DateTime.now())}_$location');
         }
       }
+      var imageApiResponse = await ImageApiHelper.upload(location!, imageUuid, _croppedFile!.path);
+      if(imageApiResponse.statusCode != 200) {
+        showDialogInternal(SimpleDialog(
+          title: Text('ImageAPI error response: ${imageApiResponse.statusCode}'),
+          children: [
+            Center(child: Text(imageApiResponse.body))
+          ],
+        ));
+        setState(() {
+          printProgress = null;
+        });
+        return;
+      }
+
       if(!await TipApiHelper.isApiAvailable()) {
         showDialogInternal(SimpleDialog(
           title: const Text('API could not be reached'),
           children: [
-            Center(child: const Text('Call to endpoint /api/tip/version failed'))
+            Center(child: Text('Call to endpoint ${TipApiHelper.baseAddress()}/api/tip/version failed'))
           ],
         ));
         setState(() {
@@ -513,7 +530,7 @@ class _FurryPageState extends State<FurryPage> {
           printProgress = 0.7;
         });
       if(generateQRCode) {
-        await TipApiHelper.printQRCode('https://oliverbleen.net/projects/tip', TipApiPrintSettings(alignment: TipApiPrintSettingsAlignment.center));
+        await TipApiHelper.printQRCode('https://oliverbleen.net/projects/tip/images?id=$imageUuid', TipApiPrintSettings(alignment: TipApiPrintSettingsAlignment.center));
       }
       setState(() {
           printProgress = 0.85;
@@ -522,9 +539,16 @@ class _FurryPageState extends State<FurryPage> {
         await TipApiHelper.println(DateTime.now().toUtc().toIso8601String(), TipApiPrintSettings());
       }
       setState(() {
-          printProgress = 0.99;
+          printProgress = 0.95;
         });
       await TipApiHelper.spitOut();
+
+      setState(() {
+          printProgress = 0.99;
+        });
+      if(generateQRCode) {
+        await ImageApiHelper.upload(location!, imageUuid, _croppedFile!.path);
+      }
 
       setState(() {
         printProgress = null;
