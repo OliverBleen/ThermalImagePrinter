@@ -2,11 +2,12 @@ import 'dart:developer';
 import 'dart:core';
 import 'package:flutter/material.dart';
 import 'dart:collection';
+import 'package:tipman/esp_socket.dart';
 import 'package:http/http.dart' as http;
 
 class TipApiHelper
 {
-  static final String _baseAddress = "4.3.2.1";
+  static String baseAddress() => EspSocket.espAddress?.address ?? '0.0.0.0';
 
   static Future<http.Response> printTIP(String data, TipApiPrintSettings settings)
   {
@@ -44,7 +45,7 @@ class TipApiHelper
   static Future<http.Response> post(String endpoint, String? data, TipApiPrintSettings settings) async
   {
     try {
-      var uri = Uri.http(_baseAddress, endpoint, settings.toMap(data));
+      var uri = Uri.http(baseAddress(), endpoint, settings.toMap(data));
       log('HTTP POST: ${uri.toString()}', level: 800);
       return http.post(uri).timeout(const Duration(seconds: 5));
     }
@@ -71,7 +72,7 @@ class TipApiHelper
   static Future<http.Response> get(String endpoint) async
   {
     try {
-      var uri = Uri.http(_baseAddress, endpoint);
+      var uri = Uri.http(baseAddress(), endpoint);
       log('HTTP GET: ${uri.toString()}', level: 800);
       return http.get(uri).timeout(const Duration(seconds: 2));
     }
@@ -122,7 +123,7 @@ class TipApiHelper
   static Future<http.Response> postBitmapData(List<int> data) async
   {
     try {
-      var uri = Uri.http(_baseAddress, '/api/tip/uploadBitmapData');
+      var uri = Uri.http(baseAddress(), '/api/tip/uploadBitmapData');
       log('HTTP POST: ${uri.toString()}', level: 800);
       return http.post(uri, body: data).timeout(const Duration(seconds: 5));
     }
@@ -134,7 +135,7 @@ class TipApiHelper
   static Future<http.Response> postBitmap(int width, int height) async
   {
     try {
-      var uri = Uri.http(_baseAddress, '/api/tip/printBitmap', <String, String>{'width': width.toString(), 'height': height.toString()});
+      var uri = Uri.http(baseAddress(), '/api/tip/printBitmap', <String, String>{'width': width.toString(), 'height': height.toString()});
       log('HTTP POST: ${uri.toString()}', level: 800);
       return http.post(uri).timeout(const Duration(seconds: 10));
     }
