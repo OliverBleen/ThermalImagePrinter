@@ -7,6 +7,7 @@ import 'package:gal/gal.dart';
 import 'package:flutter/material.dart';
 import 'package:tipman/preferences.dart';
 import 'package:tipman/tip_api.dart';
+import 'package:tipman/image_api.dart';
 
 
 class CustomPage extends StatefulWidget {
@@ -367,7 +368,65 @@ class _CustomPageState extends State<CustomPage> {
                     child: Text('Print', style: textStyle,),
                   )
                 ),
-              )
+              ),
+
+              Row(
+                children: [
+                  Padding(
+                    padding: const EdgeInsetsGeometry.only(top: 25),
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        if(text != null) {
+                          try {
+                            if(await showDialogInternalYesNo(context, 'Delete Image?', 'Are you sure you want to delete the image?') ?? false) {
+                              var apiResponse = await ImageApiHelper.deleteImage(text!);
+                              showError(apiResponse.body, apiResponse.statusCode.toString());
+                            }
+                          }
+                          catch (ex) {
+                            showError(ex.toString(), 'Error Deleting');
+                          }
+                        }
+                      },
+                      style: ButtonStyle(
+                        backgroundColor: WidgetStatePropertyAll(Color.from(alpha: 1, red: 1, green: 0.8, blue: 0.8)),
+                        foregroundColor: WidgetStatePropertyAll(Colors.red),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsetsGeometry.fromLTRB(0, 10, 0, 10),
+                        child: Text('Delete Image', style: textStyle,),
+                      )
+                    ),
+                  ),
+                  Spacer(),
+                  Padding(
+                    padding: const EdgeInsetsGeometry.only(top: 25),
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        if(text != null) {
+                          try {
+                            if(await showDialogInternalYesNo(context, 'Delete Album?', 'Are you sure you want to delete the album?') ?? false) {
+                              var apiResponse = await ImageApiHelper.deleteAlbum(text!);
+                              showError(apiResponse.body, apiResponse.statusCode.toString());
+                            }
+                          }
+                          catch (ex) {
+                            showError(ex.toString(), 'Error Deleting');
+                          }
+                        }
+                      }
+                      style: ButtonStyle(
+                        backgroundColor: WidgetStatePropertyAll(Color.from(alpha: 1, red: 1, green: 0.8, blue: 0.8)),
+                        foregroundColor: WidgetStatePropertyAll(Colors.red),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsetsGeometry.fromLTRB(0, 10, 0, 10),
+                        child: Text('Delete Album', style: textStyle,),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ],
           )
         ],
@@ -529,5 +588,37 @@ class _CustomPageState extends State<CustomPage> {
         builder: (context) => widget,
       );
     }
+  }
+
+  Future<bool?> showDialogInternalYesNo(BuildContext context, String title, String message, {String yesText = 'Yes', String noText = 'No'}) {
+    return showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(title),
+          content: Text(message),
+          actions: <Widget>[
+            TextButton(
+              style: TextButton.styleFrom(
+                textStyle: Theme.of(context).textTheme.labelLarge,
+              ),
+              child: Text(yesText),
+              onPressed: () {
+                Navigator.of(context).pop(true);
+              },
+            ),
+            TextButton(
+              style: TextButton.styleFrom(
+                textStyle: Theme.of(context).textTheme.labelLarge,
+              ),
+              child: Text(noText),
+              onPressed: () {
+                Navigator.of(context).pop(false);
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 }
