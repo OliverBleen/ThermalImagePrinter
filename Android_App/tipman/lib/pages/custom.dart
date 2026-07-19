@@ -414,7 +414,7 @@ class _CustomPageState extends State<CustomPage> {
                             showError(ex.toString(), 'Error Deleting');
                           }
                         }
-                      }
+                      },
                       style: ButtonStyle(
                         backgroundColor: WidgetStatePropertyAll(Color.from(alpha: 1, red: 1, green: 0.8, blue: 0.8)),
                         foregroundColor: WidgetStatePropertyAll(Colors.red),
