@@ -79,6 +79,7 @@ class _FurryPageState extends State<FurryPage> {
   bool imageFileFromCamera = true;
   bool printHeadingAsBitmap = true;
   bool generateQRCode = false;
+  bool uploadToImageApi = false;
   bool addTimeStamp = true;
   double? printProgress;
 
@@ -99,6 +100,7 @@ class _FurryPageState extends State<FurryPage> {
     var imgDither = (await Preferences.getDouble(Settings.imageDitherThreshold)) ?? 0.5;
     var headingAsBmp = (await Preferences.getBool(Settings.printHeadingAsBitmap)) ?? true;
     var genQRCode = (await Preferences.getBool(Settings.generateQRCode)) ?? true;
+    var uplToImgApi = (await Preferences.getBool(Settings.uploadImageToApi)) ?? true;
     var addTimeStmp = (await Preferences.getBool(Settings.addTimeStamp)) ?? true;
     setState(() {
       if(loc != null) {
@@ -108,6 +110,7 @@ class _FurryPageState extends State<FurryPage> {
       imageDitherThreshold = imgDither;
       printHeadingAsBitmap = headingAsBmp;
       generateQRCode = genQRCode;
+      uploadToImageApi = uplToImgApi;
       addTimeStamp = addTimeStmp;
     });
   }
@@ -276,6 +279,19 @@ class _FurryPageState extends State<FurryPage> {
                   }
                   setState(() {
                     generateQRCode = value!;
+                  });
+                },
+              ),
+              CheckboxListTile(
+                title: Text('Upload to website?', style: textStyle,),
+                subtitle: const Text('Upload image to website gallery?'),
+                value: uploadToImageApi,
+                onChanged: (bool? value) {
+                  if(value != null) {
+                    Preferences.saveBool(Settings.uploadImageToApi, value);
+                  }
+                  setState(() {
+                    uploadToImageApi = value!;
                   });
                 },
               ),
@@ -466,19 +482,6 @@ class _FurryPageState extends State<FurryPage> {
           Gal.putImage(filename, album: '${DateFormat('yyyyMMdd').format(DateTime.now())}_$location');
         }
       }
-      var imageApiResponse = await ImageApiHelper.upload(location!, imageUuid, _croppedFile!.path);
-      if(imageApiResponse.statusCode != 200) {
-        showDialogInternal(SimpleDialog(
-          title: Text('ImageAPI error response: ${imageApiResponse.statusCode}'),
-          children: [
-            Center(child: Text(imageApiResponse.body))
-          ],
-        ));
-        setState(() {
-          printProgress = null;
-        });
-        return;
-      }
 
       if(!await TipApiHelper.isApiAvailable()) {
         showDialogInternal(SimpleDialog(
@@ -492,9 +495,27 @@ class _FurryPageState extends State<FurryPage> {
         });
         return;
       }
+
       setState(() {
         printProgress = 0;
       });
+
+      bool? imageApiPrintAnyways;
+      if(uploadToImageApi) {
+        var imageApiResponse = await ImageApiHelper.upload(location!, imageUuid, _croppedFile!.path);
+        if(imageApiResponse.statusCode != 200) {
+          if(mounted) {
+            imageApiPrintAnyways = await showDialogInternalYesNo(context, 'ImageAPI error response: ${imageApiResponse.statusCode}', '${imageApiResponse.body}\n\nPrint anyways?') ?? false;
+          }
+          if(imageApiPrintAnyways != true) {
+            setState(() {
+              printProgress = null;
+            });
+            return;
+          }
+        }
+      }
+
       if(printHeadingAsBitmap && selectedHeading != null) {
         await TipApiHelper.printBitmap(selectedHeading!.bmpData, selectedHeading!.bmpWidth, selectedHeading!.bmpHeight);
         await TipApiHelper.feedLines(1);
@@ -529,26 +550,25 @@ class _FurryPageState extends State<FurryPage> {
       setState(() {
           printProgress = 0.7;
         });
-      if(generateQRCode) {
+
+      if(generateQRCode && uploadToImageApi && imageApiPrintAnyways != true) {
         await TipApiHelper.printQRCode('https://oliverbleen.net/projects/tip/images?id=$imageUuid', TipApiPrintSettings(alignment: TipApiPrintSettingsAlignment.center));
       }
+      else if(generateQRCode) {
+        await TipApiHelper.printQRCode('https://oliverbleen.net/projects/tip/', TipApiPrintSettings(alignment: TipApiPrintSettingsAlignment.center));
+      }
+
       setState(() {
           printProgress = 0.85;
         });
       if(addTimeStamp) {
+        await TipApiHelper.feedLines(1);
         await TipApiHelper.println(DateTime.now().toUtc().toIso8601String(), TipApiPrintSettings());
       }
       setState(() {
           printProgress = 0.95;
         });
       await TipApiHelper.spitOut();
-
-      setState(() {
-          printProgress = 0.99;
-        });
-      if(generateQRCode) {
-        await ImageApiHelper.upload(location!, imageUuid, _croppedFile!.path);
-      }
 
       setState(() {
         printProgress = null;
@@ -575,5 +595,37 @@ class _FurryPageState extends State<FurryPage> {
         builder: (context) => widget,
       );
     }
+  }
+
+  Future<bool?> showDialogInternalYesNo(BuildContext context, String title, String message, {String yesText = 'Yes', String noText = 'No'}) {
+    return showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(title),
+          content: Text(message),
+          actions: <Widget>[
+            TextButton(
+              style: TextButton.styleFrom(
+                textStyle: Theme.of(context).textTheme.labelLarge,
+              ),
+              child: Text(yesText),
+              onPressed: () {
+                Navigator.of(context).pop(true);
+              },
+            ),
+            TextButton(
+              style: TextButton.styleFrom(
+                textStyle: Theme.of(context).textTheme.labelLarge,
+              ),
+              child: Text(noText),
+              onPressed: () {
+                Navigator.of(context).pop(false);
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 }

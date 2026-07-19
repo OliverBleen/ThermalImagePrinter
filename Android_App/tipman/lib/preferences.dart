@@ -8,6 +8,7 @@ enum Settings {
   imageDitherThreshold('imageDitherThreshold'),
   printHeadingAsBitmap('printHeadingAsBitmap'),
   generateQRCode('generateQRCode'),
+  uploadImageToApi('uploadImageToApi'),
   addTimeStamp('addTimeStamp'),
   saveImagesWhenPrinting('saveImagesWhenPrinting'),
   saveDitheredImagesWhenPrinting('saveDitheredImagesWhenPrinting'),
