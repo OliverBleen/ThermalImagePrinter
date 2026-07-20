@@ -7,6 +7,8 @@ using System;
 using ImageAPI.Models;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Extensions.Logging;
+using ImageMagick;
+using System.IO;
 
 namespace ImageAPI.Controllers;
 
@@ -64,6 +66,44 @@ public class ImagesController : ControllerBase
 
         _logger.LogInformation($"Serving image '{uuid}'");
         return imgStream;
+    }
+
+    [HttpGet("GetPreview/{uuid}")]
+    public async Task<ActionResult> GetPreviewImage(string uuid)
+    {
+        if(!Guid.TryParse(uuid, out var imageUuid))
+        {
+            _logger.LogWarning($"Get image with malformed UUID: '{uuid}'");
+            return BadRequest($"Given Image UUID does not have a valid format: '{uuid}'");
+        }
+
+        var img = await DatabaseHelper.GetImageAsync(imageUuid);
+
+        if(img == null)
+        {
+            _logger.LogWarning($"Get image not found: '{uuid}'");
+            return NotFound($"No image with UUID '{uuid}' exists");
+        }
+
+        var imgStream = await FileManager.GetImage(img);
+
+        if(imgStream == null)
+        {
+            _logger.LogError($"Image in database but not on disk: '{uuid}', Album: '{img.AlbumTitle}'");
+            return StatusCode(550, "The requested image exists in the Database, but not on disk");
+        }
+
+        using var image = new MagickImage(imgStream.FileStream);
+
+        image.Resize(750, 750);
+        image.Quality = 60; // Very aggressive, but I don't have that much upload bandwith :'3
+        
+        var memStream = new MemoryStream();
+        await image.WriteAsync(memStream, MagickFormat.Jpeg);
+        memStream.Position = 0;
+
+        _logger.LogInformation($"Serving image preview '{uuid}'");
+        return new FileStreamResult(memStream, "image/jpeg");
     }
 
     [HttpGet("GetMetadata/{uuid}")]
