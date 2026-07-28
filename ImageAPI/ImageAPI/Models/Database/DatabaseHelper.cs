@@ -85,6 +85,20 @@ class DatabaseHelper
         await _context.SaveChangesAsync();
     }
 
+    public static async Task IncrementAlbumViews(string albumTitle)
+    {
+        using var _context = new DatabaseContext();
+
+        var album = await _context.Albums.FirstOrDefaultAsync(a => a.Title == albumTitle);
+        
+        if(album == null)
+            return;
+        
+        album.Views++;
+        
+        await _context.SaveChangesAsync();
+    }
+
     #endregion
 
     #region Image
@@ -124,6 +138,45 @@ class DatabaseHelper
             return;
 
         _context.Images.Remove(image);
+        await _context.SaveChangesAsync();
+    }
+
+    public static async Task IncrementImageViews(Guid imageId)
+    {
+        using var _context = new DatabaseContext();
+
+        var image = await _context.Images.FirstOrDefaultAsync(i => i.Id == imageId.ToString());
+        if(image == null)
+            return;
+
+        image.Views++;
+
+        await _context.SaveChangesAsync();
+    }
+
+    public static async Task IncrementImagePreviewLargeViews(Guid imageId)
+    {
+        using var _context = new DatabaseContext();
+
+        var image = await _context.Images.FirstOrDefaultAsync(i => i.Id == imageId.ToString());
+        if(image == null)
+            return;
+
+        image.PreviewLargeViews++;
+
+        await _context.SaveChangesAsync();
+    }
+
+    public static async Task IncrementImagePreviewSmallViews(Guid imageId)
+    {
+        using var _context = new DatabaseContext();
+
+        var image = await _context.Images.FirstOrDefaultAsync(i => i.Id == imageId.ToString());
+        if(image == null)
+            return;
+
+        image.PreviewSmallViews++;
+
         await _context.SaveChangesAsync();
     }
 

@@ -9,6 +9,7 @@ public partial class ApiResponseImage
     public string TimestampCreated { get; set; } = null!;
 
     public string ContentType { get; set; } = null!;
+    public int Views { get; set; }
 
     public ApiResponseImage(Image image)
     {
@@ -16,5 +17,6 @@ public partial class ApiResponseImage
         this.AlbumTitle = image.AlbumTitle;
         this.TimestampCreated = image.TimestampCreated;
         this.ContentType = image.ContentType;
+        this.Views = image.Views;
     }
 }

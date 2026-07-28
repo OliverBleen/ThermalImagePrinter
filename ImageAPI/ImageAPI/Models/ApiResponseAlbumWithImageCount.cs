@@ -12,6 +12,7 @@ public class ApiResponseAlbumWithImageCount
     public string TimestampLastUpdate { get; set; } = null!;
 
     public int ImageCount { get; set; }
+    public int Views { get; set; }
 
     public ApiResponseAlbumWithImageCount(Album album)
     {
@@ -19,5 +20,6 @@ public class ApiResponseAlbumWithImageCount
         this.TimestampCreated = album.TimestampCreated;
         this.TimestampLastUpdate = album.TimestampLastUpdate;
         this.ImageCount = album.Images.Count;
+        this.Views = album.Views;
     }
 }

@@ -10,6 +10,7 @@ public class ApiResponseAlbum
     public string TimestampCreated { get; set; } = null!;
 
     public string TimestampLastUpdate { get; set; } = null!;
+    public int Views { get; set; }
 
     public virtual List<ApiResponseImage> Images { get; set; } = new List<ApiResponseImage>();
 
@@ -18,6 +19,7 @@ public class ApiResponseAlbum
         this.Title = album.Title;
         this.TimestampCreated = album.TimestampCreated;
         this.TimestampLastUpdate = album.TimestampLastUpdate;
+        this.Views = album.Views;
         this.Images = [.. album.Images.OrderByDescending(i => i.TimestampCreated).Select(i => new ApiResponseImage(i))];
     }
 }

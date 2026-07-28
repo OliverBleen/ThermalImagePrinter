@@ -30,6 +30,8 @@ public class AlbumsController : ControllerBase
             _logger.LogWarning($"Requested album '{albumName}' does not exist");
             return NotFound($"No album with name '{albumName}' exists");
         }
+
+        await DatabaseHelper.IncrementAlbumViews(albumName);
         
         _logger.LogInformation($"Serving album '{albumName}'");
         return album;

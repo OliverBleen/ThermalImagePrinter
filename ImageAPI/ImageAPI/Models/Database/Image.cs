@@ -13,5 +13,11 @@ public partial class Image
 
     public string ContentType { get; set; } = null!;
 
+    public int Views { get; set; }
+
+    public int PreviewLargeViews { get; set; }
+
+    public int PreviewSmallViews { get; set; }
+
     public virtual Album AlbumTitleNavigation { get; set; } = null!;
 }
