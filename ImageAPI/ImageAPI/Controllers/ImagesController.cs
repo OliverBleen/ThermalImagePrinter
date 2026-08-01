@@ -137,7 +137,7 @@ public class ImagesController : ControllerBase
 
         using var image = new MagickImage(imgStream.FileStream);
 
-        image.Resize(250, 250);
+        image.Resize(300, 300);
         image.Quality = 60; // Very aggressive, but I don't have that much upload bandwith :'3
         
         var memStream = new MemoryStream();

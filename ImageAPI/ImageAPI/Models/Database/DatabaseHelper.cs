@@ -182,3 +182,27 @@ class DatabaseHelper
 
     #endregion
 }
+
+public static class UsefulExtensions
+{
+    public static IEnumerable<T> GetRandomSubset<T>(this IEnumerable<T> origin, int num)
+    {
+        var rnd = new Random();
+        var output = new List<T>(num);
+        var indexList = new List<int>(num);
+
+        for(int i = 0; i < num && i < origin.Count(); i++)
+        {
+            var index = rnd.Next(0, origin.Count());
+            if(indexList.Contains(index))
+            {
+                i--;
+                continue;
+            }
+            output.Add(origin.ElementAt(index));
+            indexList.Add(index);
+        }
+
+        return output;
+    }
+}
