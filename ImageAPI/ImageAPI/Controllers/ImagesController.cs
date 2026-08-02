@@ -35,6 +35,12 @@ public class ImagesController : ControllerBase
 
         await FileManager.CreateImage(albumTitle, imageUuid, imageData);
 
+        using var previewStream = await GetImagePreview(imageData.OpenReadStream());
+        using var previewSmallStream = await GetImagePreviewSmall(imageData.OpenReadStream());
+
+        await FileManager.CreateImagePreview(albumTitle, imageUuid, previewStream);
+        await FileManager.CreateImagePreviewSmall(albumTitle, imageUuid, previewSmallStream);
+
         _logger.LogInformation($"Uploaded image '{uuid}', Album: '{albumTitle}'");
         return Ok();
     }
@@ -87,6 +93,15 @@ public class ImagesController : ControllerBase
             return NotFound($"No image with UUID '{uuid}' exists");
         }
 
+        var imgPreviewStream = await FileManager.GetImagePreview(img);
+        if(imgPreviewStream != null)
+        {
+            _logger.LogInformation($"Serving image preview '{uuid}'");
+            return imgPreviewStream;
+        }
+
+
+        _logger.LogInformation($"Preview for image '{uuid}' does not exist on disk, creating...");
         var imgStream = await FileManager.GetImage(img);
 
         if(imgStream == null)
@@ -95,14 +110,8 @@ public class ImagesController : ControllerBase
             return StatusCode(550, "The requested image exists in the Database, but not on disk");
         }
 
-        using var image = new MagickImage(imgStream.FileStream);
-
-        image.Resize(750, 750);
-        image.Quality = 60; // Very aggressive, but I don't have that much upload bandwith :'3
-        
-        var memStream = new MemoryStream();
-        await image.WriteAsync(memStream, MagickFormat.Jpeg);
-        memStream.Position = 0;
+        var memStream = await GetImagePreview(imgStream.FileStream);
+        await FileManager.CreateImagePreview(img.AlbumTitle, imageUuid, memStream);
 
         await DatabaseHelper.IncrementImagePreviewLargeViews(imageUuid);
 
@@ -127,6 +136,14 @@ public class ImagesController : ControllerBase
             return NotFound($"No image with UUID '{uuid}' exists");
         }
 
+        var imgPreviewSmallStream = await FileManager.GetImagePreviewSmall(img);
+        if(imgPreviewSmallStream != null)
+        {
+            _logger.LogInformation($"Serving small image preview '{uuid}'");
+            return imgPreviewSmallStream;
+        }
+
+        _logger.LogInformation($"Preview small for image '{uuid}' does not exist on disk, creating...");
         var imgStream = await FileManager.GetImage(img);
 
         if(imgStream == null)
@@ -135,14 +152,8 @@ public class ImagesController : ControllerBase
             return StatusCode(550, "The requested image exists in the Database, but not on disk");
         }
 
-        using var image = new MagickImage(imgStream.FileStream);
-
-        image.Resize(300, 300);
-        image.Quality = 60; // Very aggressive, but I don't have that much upload bandwith :'3
-        
-        var memStream = new MemoryStream();
-        await image.WriteAsync(memStream, MagickFormat.Jpeg);
-        memStream.Position = 0;
+        var memStream = await GetImagePreviewSmall(imgStream.FileStream);
+        await FileManager.CreateImagePreviewSmall(img.AlbumTitle, imageUuid, memStream);
 
         await DatabaseHelper.IncrementImagePreviewSmallViews(imageUuid);
 
@@ -197,5 +208,31 @@ public class ImagesController : ControllerBase
 
         _logger.LogInformation($"Deleting image '{uuid}'");
         return Ok();
+    }
+
+
+    private static async Task<MemoryStream> GetImagePreviewSmall(Stream input)
+    {
+        using var image = new MagickImage(input);
+
+        image.Resize(300, 300);
+        image.Quality = 60; // Very aggressive, but I don't have that much upload bandwith :'3
+        
+        var memStream = new MemoryStream();
+        await image.WriteAsync(memStream, MagickFormat.Jpeg);
+        memStream.Position = 0;
+        return memStream;
+    }
+    private async Task<MemoryStream> GetImagePreview(Stream input)
+    {
+        using var image = new MagickImage(input);
+
+        image.Resize(750, 750);
+        image.Quality = 60; // Very aggressive, but I don't have that much upload bandwith :'3
+        
+        var memStream = new MemoryStream();
+        await image.WriteAsync(memStream, MagickFormat.Jpeg);
+        memStream.Position = 0;
+        return memStream;
     }
 }
