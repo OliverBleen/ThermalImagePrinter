@@ -14,7 +14,9 @@ namespace ImageAPI;
 
 public class Program
 {
-    public static readonly string API_VERSION = "v2.2.0";
+    public static readonly string API_VERSION = "v2.3.0";
+    // The value for "max-age" in the "Cache-Control" Header that is added to every image GET response
+    public const int RESPONSE_CACHE_MAX_AGE = 86400;
     // => optionsBuilder.UseSqlite($"Filename={Path.Combine(Program.BASE_DIR, "Database.sqlite3")}");
     public static string BASE_DIR = "./bin/Debug/";
 

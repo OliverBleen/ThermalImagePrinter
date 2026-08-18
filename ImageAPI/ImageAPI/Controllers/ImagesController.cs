@@ -46,6 +46,7 @@ public class ImagesController : ControllerBase
     }
 
     [HttpGet("Get/{uuid}")]
+    [ResponseCache(Location = ResponseCacheLocation.Any, Duration = Program.RESPONSE_CACHE_MAX_AGE)]
     public async Task<ActionResult> GetImage(string uuid)
     {
         if(!Guid.TryParse(uuid, out var imageUuid))
@@ -77,6 +78,7 @@ public class ImagesController : ControllerBase
     }
 
     [HttpGet("GetPreview/{uuid}")]
+    [ResponseCache(Location = ResponseCacheLocation.Any, Duration = Program.RESPONSE_CACHE_MAX_AGE)]
     public async Task<ActionResult> GetPreviewImage(string uuid)
     {
         if(!Guid.TryParse(uuid, out var imageUuid))
@@ -120,6 +122,7 @@ public class ImagesController : ControllerBase
     }
 
     [HttpGet("GetPreviewSmall/{uuid}")]
+    [ResponseCache(Location = ResponseCacheLocation.Any, Duration = Program.RESPONSE_CACHE_MAX_AGE)]
     public async Task<ActionResult> GetPreviewSmallImage(string uuid)
     {
         if(!Guid.TryParse(uuid, out var imageUuid))
@@ -163,6 +166,7 @@ public class ImagesController : ControllerBase
 
     [HttpGet("GetMetadata/{uuid}")]
     [ApiKeyAuthFilter("Get")]
+    [ResponseCache(Location = ResponseCacheLocation.Any, Duration = Program.RESPONSE_CACHE_MAX_AGE)]
     public async Task<ActionResult<ApiResponseImage>> GetImageMetadata(string uuid)
     {
         if(!Guid.TryParse(uuid, out var imageUuid))
