@@ -37,7 +37,7 @@ enum Heading {
     );
 }
 enum SubHeading {
-  spotted('Spotted at {location}'),
+  spotted('Spotted at\n{location}'),
   payFine('To be paid within 3 days');
   
   const SubHeading(this.label);
